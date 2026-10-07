@@ -190,3 +190,31 @@ html
             if (usernameInput.value.trim() === ADMIN_RUMUZU) {
                 usernameInput.style.color = "#ef4444";
                 adminBtn.style.display = "block";         // Duyuru yap butonunu 
+<!-- Sayfanın en altındaki script alanının başlangıcı -->
+    <script>
+        let mevcutOda = 'Genel';
+        let acikOdalar = JSON.parse(localStorage.getItem('sabit_odalar')) || ['Genel']; 
+        
+        const ADMIN_RUMUZU = "Kral"; 
+        const BOT_ADI = "AsistanBot";
+
+        // 1. Odaya giriş yapma fonksiyonu
+        function odayaKatil(odaAdi) {
+            // ... oda değiştirme kodları ...
+        }
+
+        // 2. İŞTE BAHSETTİĞİNİZ KOD TAM OLARAK BURADADIR:
+        function botMesajGonder(metin) {
+            const p = document.createElement('div');
+            p.className = 'mesaj bot-mesaj'; // Mavi tasarımı çeker
+            p.innerHTML = `<span class="bot-etiket">BOT</span><strong class="bot-isim">[${BOT_ADI}]:</strong> ${metin}`;
+            document.getElementById('chat-penceresi').appendChild(p);
+        }
+
+        // 3. Botun gelen mesajları kontrol ettiği alan buradan devam eder:
+        function botCevapKontrol(kullaniciMesaji, kullaniciAdi) {
+            // ... bot cevap kodları ...
+        }
+        
+        // ... diğer fonksiyonlar ve kodun bitişi ...
+    </script>
