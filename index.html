@@ -61,7 +61,7 @@ html
         <div id="chat-penceresi"></div>
 
         <div class="mesaj-paneli">
-            <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın..." autocomplete="off">
+            <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın ve Enter'a basın..." autocomplete="off">
             <button id="admin-btn" onclick="duyuruGonder()">📢 Duyuru Yap</button>
             <button id="gonder-btn" onclick="mesajGonder()">Gönder</button>
         </div>
@@ -75,13 +75,17 @@ html
 
         function odayaKatil(odaAdi) {
             mevcutOda = odaAdi;
-            document.getElementById('aktif-oda').innerText = mevcutOda;
-            document.getElementById('chat-penceresi').innerHTML = '';
+            const aktifOdaElement = document.getElementById('aktif-oda');
+            if(aktifOdaElement) aktifOdaElement.innerText = mevcutOda;
             
-            const p = document.createElement('div');
-            p.className = 'mesaj';
-            p.innerHTML = `<span class="sistem-mesaji">⚙️ "${mevcutOda}" odasına giriş yaptınız.</span>`;
-            document.getElementById('chat-penceresi').appendChild(p);
+            const pencere = document.getElementById('chat-penceresi');
+            if(pencere) {
+                pencere.innerHTML = '';
+                const p = document.createElement('div');
+                p.className = 'mesaj';
+                p.innerHTML = `<span class="sistem-mesaji">⚙️ "${mevcutOda}" odasına giriş yaptınız.</span>`;
+                pencere.appendChild(p);
+            }
 
             odaListesiniGuncelle();
 
@@ -182,9 +186,3 @@ html
             const pencere = document.getElementById('chat-penceresi');
             if(pencere) {
                 pencere.appendChild(p);
-                pencere.scrollTop = pencere.scrollHeight;
-            }
-
-            botCevapKontrol(input.value, username);
-            input.value = '';
-        }
