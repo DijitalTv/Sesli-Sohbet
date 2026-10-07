@@ -4,30 +4,126 @@ html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canlı Sohbet Odası</title>
+    <title>Kendi Sohbet Ağım</title>
+    <!-- Tasarım için hazır CSS kütüphanesi -->
+    <link rel="stylesheet" href="https://jsdelivr.net">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #1a1a1a; /* Sayfa arka plan rengi */
-        }
-        .chat-frame {
-            width: 100%;
-            height: 100vh;
-            border: none;
-        }
+        #chat-penceresi { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .mesaj { margin-bottom: 8px; }
+        .sistem-mesaji { color: #888; font-style: italic; }
+        .oda-yonetimi { display: flex; gap: 10px; margin-bottom: 20px; }
+        #aktif-oda { font-weight: bold; color: #0076d6; }
     </style>
 </head>
 <body>
 
-    <!-- Güncel, SSL destekli ve engellenmeyen resmi KiwiIRC sunucusu -->
-   <iframe src="https://kiwiirc.com" style="border:0; width:100%; height:100vh;"></iframe>
+    <h2>🌐 Özel Sohbet Ağı</h2>
+    <p>Aktif Oda: <span id="aktif-oda">Genel</span></p>
 
+    <!-- Oda Kurma ve Değiştirme Kısmı -->
+    <div class="oda-yonetimi">
+        <input type="text" id="oda-input" placeholder="Yeni oda adı yazın...">
+        <button onclick="odaDegistir()">Odayı Kur / Bağlan</button>
+    </div>
+
+    <!-- Kullanıcı Adı Girişi -->
+    <div style="margin-bottom: 15px;">
+        <input type="text" id="username-input" placeholder="Rumuz (Takma Ad)" value="Kral">
+    </div>
+
+    <!-- Sohbet Alanı -->
+    <div id="chat-penceresi"></div>
+
+    <!-- Mesaj Gönderme Kısmı -->
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın..." style="flex-grow: 1;">
+        <button onclick="mesajGonder()">Gönder</button>
+    </div>
+
+    <!-- Arka planda sunucu gerektirmeden odaları bağlayan ücretsiz kütüphane -->
+    <script src="https://unpkg.com"></script>
+    <script src="https://pubnub.com"></script>
+
+    <script>
+        // Ücretsiz test anahtarları ile oda sistemini aktif ediyoruz
+        const pubnub = new PubNub({
+            publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', // Test amaçlı açık genel anahtar
+            subscribeKey: 'sub-c-5fec34d2-f67f-442e-a567-2703a11fa677',
+            userId: "user_" + Math.random().toString(16).slice(2)
+        });
+
+        let mevcutOda = 'Genel';
+
+        function odayaKatil(odaAdi) {
+            // Eski odadan çık
+            pubnub.unsubscribe({ channels: [mevcutOda] });
+            
+            mevcutOda = odaAdi;
+            document.getElementById('aktif-oda').innerText = mevcutOda;
+            document.getElementById('chat-penceresi').innerHTML = '';
+            
+            // Yeni odayı kur/katıl
+            pubnub.subscribe({ channels: [mevcutOda] });
+            sistemMesajiEkle(`"${mevcutOda}" odası kuruldu ve bağlandınız.`);
+        }
+
+        // Dinleyici: Yeni mesaj geldiğinde ekrana yazdırır
+        pubnub.addListener({
+            message: function(event) {
+                mesajEkle(event.message.user, event.message.text);
+            }
+        });
+
+        // Mesaj gönderme fonksiyonu
+        function mesajGonder() {
+            const input = document.getElementById('mesaj-input');
+            const username = document.getElementById('username-input').value || 'Misafir';
+            
+            if (input.value.trim() === '') return;
+
+            pubnub.publish({
+                channel: mevcutOda,
+                message: { user: username, text: input.value }
+            });
+
+            input.value = '';
+        }
+
+        // Oda değiştirme butonu fonksiyonu
+        function odaDegistir() {
+            const odaInput = document.getElementById('oda-input');
+            if (odaInput.value.trim() !== '') {
+                odayaKatil(odaInput.value.trim());
+                odaInput.value = '';
+            }
+        }
+
+        // Ekrana yazı yazdırma yardımcı fonksiyonları
+        function mesajEkle(kullanici, mesaj) {
+            const p = document.createElement('div');
+            p.className = 'mesaj';
+            p.innerHTML = `<strong>${kullanici}:</strong> ${mesaj}`;
+            const pencere = document.getElementById('chat-penceresi');
+            pencere.appendChild(p);
+            pencere.scrollTop = pencere.scrollHeight;
+        }
+
+        function sistemMesajiEkle(metin) {
+            const p = document.createElement('div');
+            p.className = 'mesaj sistem-mesaji';
+            p.innerText = metin;
+            const pencere = document.getElementById('chat-penceresi');
+            pencere.appendChild(p);
+            pencere.scrollTop = pencere.scrollHeight;
+        }
+
+        // Enter tuşu ile mesaj gönderme entegrasyonu
+        document.getElementById('mesaj-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') mesajGonder();
+        });
+
+        // İlk açılışta Genel odasına bağlan
+        odayaKatil('Genel');
+    </script>
 </body>
 </html>
