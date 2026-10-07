@@ -4,7 +4,7 @@ html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat | Özel Sohbet Ağı</title>
+    <title>Kral Chat | Bağımsız Sohbet Ağı</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 95vh; box-sizing: border-box; }
         .konteyner { max-width: 900px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; flex-grow: 1; }
@@ -38,7 +38,7 @@ html
 
         <div class="kontrol-paneli">
             <input type="text" id="username-input" placeholder="Rumuz" value="Kral">
-            <input type="text" id="oda-input" placeholder="Kurulacak oda adını yazın...">
+            <input type="text" id="oda-input" placeholder="Kurulacak yeni oda adını yazın...">
             <button onclick="odaDegistir()">Oda Aç / Bağlan</button>
         </div>
 
@@ -50,46 +50,44 @@ html
         </div>
     </div>
 
-    <!-- Güçlendirilmiş ve alternatifi olan mesajlaşma altyapısı -->
-    <script src="https://pubnub.com"></script>
-
     <script>
-        const pubnub = new PubNub({
-            publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', 
-            subscribeKey: 'sub-c-5fec34d2-f67f-442e-a567-2703a11fa677',
-            userId: "user_" + Math.random().toString(16).slice(2)
-        });
-
+        // Sunucusuz çalışan bağımsız tarayıcı iletişim kanalı
+        let sohbetKanali;
         let mevcutOda = 'Genel';
 
         function odayaKatil(odaAdi) {
-            try {
-                pubnub.unsubscribe({ channels: [mevcutOda] });
-            } catch(e) {}
+            // Eğer açık bir kanal varsa önce onu kapat
+            if (sohbetKanali) {
+                sohbetKanali.close();
+            }
             
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
             document.getElementById('chat-penceresi').innerHTML = '';
             
-            pubnub.subscribe({ channels: [mevcutOda] });
-            sistemMesajiEkle(`"${mevcutOda}" odası başarıyla açıldı ve bağlandınız.`);
+            // Tarayıcı içi yeni bağımsız oda kanalı oluşturma
+            sohbetKanali = new BroadcastChannel('chat_' + mevcutOda);
+            
+            // Yeni gelen mesajları yakalama dinleyicisi
+            sohbetKanali.onmessage = function(event) {
+                mesajEkle(event.data.user, event.data.text);
+            };
+            
+            sistemMesajiEkle(`"${mevcutOda}" odası başarıyla açıldı.`);
         }
-
-        pubnub.addListener({
-            message: function(event) {
-                mesajEkle(event.message.user, event.message.text);
-            }
-        });
 
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
             const username = document.getElementById('username-input').value || 'Kral';
             if (input.value.trim() === '') return;
 
-            pubnub.publish({
-                channel: mevcutOda,
-                message: { user: username, text: input.value }
-            });
+            const mesajVerisi = { user: username, text: input.value };
+            
+            // Mesajı odaya gönder
+            sohbetKanali.postMessage(mesajVerisi);
+            
+            // Kendi ekranımıza da ekle
+            mesajEkle(username, input.value);
             input.value = '';
         }
 
@@ -124,7 +122,7 @@ html
             if (e.key === 'Enter') mesajGonder();
         });
 
-        // İlk başlangıç odası
+        // Başlangıçta Genel odasını aç
         odayaKatil('Genel');
     </script>
 </body>
