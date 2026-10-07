@@ -4,16 +4,30 @@ html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sesli Sohbet Odaları</title>
+    <title>Canlı Sohbet Odası</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #111; }
-        iframe { width: 100%; height: 100%; border: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1a; /* Sayfa arka plan rengi */
+        }
+        .chat-frame {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Engelsiz, Doğrudan Açılan Türkçe Sohbet Paneli -->
-    <iframe src="https://chatzone.org"></iframe>
+    <!-- Güncel, SSL destekli ve engellenmeyen resmi KiwiIRC sunucusu -->
+    <iframe class="chat-frame" src="https://kiwiirc.com"></iframe>
 
 </body>
 </html>
