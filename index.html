@@ -6,34 +6,25 @@ html
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kral Chat | Özel Sohbet Ağı</title>
     <style>
-        /* Önceki uygulamanıza benzeyen koyu modern tema ayarları */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 95vh; box-sizing: border-box; }
         .konteyner { max-width: 900px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; flex-grow: 1; }
-        h2 { margin: 0 0 10px 0; color: #ffffff; font-size: 24px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        h2 { margin: 0 0 10px 0; color: #ffffff; font-size: 24px; }
         .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; border-left: 4px solid #10b981; }
         #aktif-oda { font-weight: bold; color: #10b981; }
-        
-        /* Üst Kontrol Paneli */
         .kontrol-paneli { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        input[type="text"] { background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; padding: 10px 15px; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
+        input[type="text"] { background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; padding: 10px 15px; border-radius: 6px; font-size: 14px; outline: none; }
         input[type="text"]:focus { border-color: #10b981; }
         #oda-input { flex-grow: 2; min-width: 150px; }
         #username-input { flex-grow: 1; min-width: 100px; font-weight: bold; color: #10b981; }
-        
-        button { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        button { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
         button:hover { background-color: #059669; }
-        
-        /* Chat Penceresi */
-        #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
         .mesaj { margin-bottom: 10px; line-height: 1.5; word-wrap: break-word; font-size: 15px; }
         .mesaj strong { color: #34d399; margin-right: 5px; }
         .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; font-size: 13px; }
-        
-        /* Alt Mesaj Gönderme Alanı */
         .mesaj-paneli { display: flex; gap: 10px; }
         #mesaj-input { flex-grow: 1; padding: 12px 15px; }
         #gonder-btn { background-color: #2563eb; }
-        #gonder-btn:hover { background-color: #1d4ed8; }
     </style>
 </head>
 <body>
@@ -45,28 +36,24 @@ html
             Şu anki Oda: <span id="aktif-oda">Genel</span>
         </div>
 
-        <!-- Üst Ayar Bölümü -->
         <div class="kontrol-paneli">
-            <input type="text" id="username-input" placeholder="Rumuz (Takma Ad)" value="Kral">
-            <input type="text" id="oda-input" placeholder="Kurmak/Katılmak istediğiniz oda adı...">
+            <input type="text" id="username-input" placeholder="Rumuz" value="Kral">
+            <input type="text" id="oda-input" placeholder="Kurulacak oda adını yazın...">
             <button onclick="odaDegistir()">Oda Aç / Bağlan</button>
         </div>
 
-        <!-- Sohbet Ekranı -->
         <div id="chat-penceresi"></div>
 
-        <!-- Yazı Yazma Alanı -->
         <div class="mesaj-paneli">
             <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın ve Enter'a basın..." autocomplete="off">
             <button id="gonder-btn" onclick="mesajGonder()">Gönder</button>
         </div>
     </div>
 
-    <!-- Bağlantı kütüphaneleri -->
+    <!-- Güçlendirilmiş ve alternatifi olan mesajlaşma altyapısı -->
     <script src="https://pubnub.com"></script>
 
     <script>
-        // Ücretsiz altyapı bağlantısı
         const pubnub = new PubNub({
             publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', 
             subscribeKey: 'sub-c-5fec34d2-f67f-442e-a567-2703a11fa677',
@@ -76,7 +63,10 @@ html
         let mevcutOda = 'Genel';
 
         function odayaKatil(odaAdi) {
-            pubnub.unsubscribe({ channels: [mevcutOda] });
+            try {
+                pubnub.unsubscribe({ channels: [mevcutOda] });
+            } catch(e) {}
+            
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
             document.getElementById('chat-penceresi').innerHTML = '';
@@ -93,22 +83,19 @@ html
 
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
-            const username = document.getElementById('username-input').value || 'Misafir';
-            
+            const username = document.getElementById('username-input').value || 'Kral';
             if (input.value.trim() === '') return;
 
             pubnub.publish({
                 channel: mevcutOda,
                 message: { user: username, text: input.value }
             });
-
             input.value = '';
         }
 
         function odaDegistir() {
             const odaInput = document.getElementById('oda-input');
-            if (odaInput.value.trim() !== '') {
-                // Oda adının başına estetik amaçlı # ekliyoruz
+            if (odaInput && odaInput.value.trim() !== '') {
                 let temizOda = odaInput.value.trim().replace('#', '');
                 odayaKatil('#' + temizOda);
                 odaInput.value = '';
@@ -137,7 +124,7 @@ html
             if (e.key === 'Enter') mesajGonder();
         });
 
-        // İlk açılış
+        // İlk başlangıç odası
         odayaKatil('Genel');
     </script>
 </body>
