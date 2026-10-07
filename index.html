@@ -4,50 +4,71 @@ html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kendi Sohbet Ağım</title>
-    <!-- Tasarım için hazır CSS kütüphanesi -->
-    <link rel="stylesheet" href="https://jsdelivr.net">
+    <title>Kral Chat | Özel Sohbet Ağı</title>
     <style>
-        #chat-penceresi { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .mesaj { margin-bottom: 8px; }
-        .sistem-mesaji { color: #888; font-style: italic; }
-        .oda-yonetimi { display: flex; gap: 10px; margin-bottom: 20px; }
-        #aktif-oda { font-weight: bold; color: #0076d6; }
+        /* Önceki uygulamanıza benzeyen koyu modern tema ayarları */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 95vh; box-sizing: border-box; }
+        .konteyner { max-width: 900px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; flex-grow: 1; }
+        h2 { margin: 0 0 10px 0; color: #ffffff; font-size: 24px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; border-left: 4px solid #10b981; }
+        #aktif-oda { font-weight: bold; color: #10b981; }
+        
+        /* Üst Kontrol Paneli */
+        .kontrol-paneli { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        input[type="text"] { background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; padding: 10px 15px; border-radius: 6px; font-size: 14px; outline: none; transition: border 0.2s; }
+        input[type="text"]:focus { border-color: #10b981; }
+        #oda-input { flex-grow: 2; min-width: 150px; }
+        #username-input { flex-grow: 1; min-width: 100px; font-weight: bold; color: #10b981; }
+        
+        button { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        button:hover { background-color: #059669; }
+        
+        /* Chat Penceresi */
+        #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        .mesaj { margin-bottom: 10px; line-height: 1.5; word-wrap: break-word; font-size: 15px; }
+        .mesaj strong { color: #34d399; margin-right: 5px; }
+        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; font-size: 13px; }
+        
+        /* Alt Mesaj Gönderme Alanı */
+        .mesaj-paneli { display: flex; gap: 10px; }
+        #mesaj-input { flex-grow: 1; padding: 12px 15px; }
+        #gonder-btn { background-color: #2563eb; }
+        #gonder-btn:hover { background-color: #1d4ed8; }
     </style>
 </head>
 <body>
 
-    <h2>🌐 Özel Sohbet Ağı</h2>
-    <p>Aktif Oda: <span id="aktif-oda">Genel</span></p>
+    <div class="konteyner">
+        <h2>🌐 Özel Sohbet Ağı</h2>
+        
+        <div class="durum-bilgisi">
+            Şu anki Oda: <span id="aktif-oda">Genel</span>
+        </div>
 
-    <!-- Oda Kurma ve Değiştirme Kısmı -->
-    <div class="oda-yonetimi">
-        <input type="text" id="oda-input" placeholder="Yeni oda adı yazın...">
-        <button onclick="odaDegistir()">Odayı Kur / Bağlan</button>
+        <!-- Üst Ayar Bölümü -->
+        <div class="kontrol-paneli">
+            <input type="text" id="username-input" placeholder="Rumuz (Takma Ad)" value="Kral">
+            <input type="text" id="oda-input" placeholder="Kurmak/Katılmak istediğiniz oda adı...">
+            <button onclick="odaDegistir()">Oda Aç / Bağlan</button>
+        </div>
+
+        <!-- Sohbet Ekranı -->
+        <div id="chat-penceresi"></div>
+
+        <!-- Yazı Yazma Alanı -->
+        <div class="mesaj-paneli">
+            <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın ve Enter'a basın..." autocomplete="off">
+            <button id="gonder-btn" onclick="mesajGonder()">Gönder</button>
+        </div>
     </div>
 
-    <!-- Kullanıcı Adı Girişi -->
-    <div style="margin-bottom: 15px;">
-        <input type="text" id="username-input" placeholder="Rumuz (Takma Ad)" value="Kral">
-    </div>
-
-    <!-- Sohbet Alanı -->
-    <div id="chat-penceresi"></div>
-
-    <!-- Mesaj Gönderme Kısmı -->
-    <div style="display: flex; gap: 10px;">
-        <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın..." style="flex-grow: 1;">
-        <button onclick="mesajGonder()">Gönder</button>
-    </div>
-
-    <!-- Arka planda sunucu gerektirmeden odaları bağlayan ücretsiz kütüphane -->
-    <script src="https://unpkg.com"></script>
+    <!-- Bağlantı kütüphaneleri -->
     <script src="https://pubnub.com"></script>
 
     <script>
-        // Ücretsiz test anahtarları ile oda sistemini aktif ediyoruz
+        // Ücretsiz altyapı bağlantısı
         const pubnub = new PubNub({
-            publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', // Test amaçlı açık genel anahtar
+            publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', 
             subscribeKey: 'sub-c-5fec34d2-f67f-442e-a567-2703a11fa677',
             userId: "user_" + Math.random().toString(16).slice(2)
         });
@@ -55,26 +76,21 @@ html
         let mevcutOda = 'Genel';
 
         function odayaKatil(odaAdi) {
-            // Eski odadan çık
             pubnub.unsubscribe({ channels: [mevcutOda] });
-            
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
             document.getElementById('chat-penceresi').innerHTML = '';
             
-            // Yeni odayı kur/katıl
             pubnub.subscribe({ channels: [mevcutOda] });
-            sistemMesajiEkle(`"${mevcutOda}" odası kuruldu ve bağlandınız.`);
+            sistemMesajiEkle(`"${mevcutOda}" odası başarıyla açıldı ve bağlandınız.`);
         }
 
-        // Dinleyici: Yeni mesaj geldiğinde ekrana yazdırır
         pubnub.addListener({
             message: function(event) {
                 mesajEkle(event.message.user, event.message.text);
             }
         });
 
-        // Mesaj gönderme fonksiyonu
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
             const username = document.getElementById('username-input').value || 'Misafir';
@@ -89,20 +105,20 @@ html
             input.value = '';
         }
 
-        // Oda değiştirme butonu fonksiyonu
         function odaDegistir() {
             const odaInput = document.getElementById('oda-input');
             if (odaInput.value.trim() !== '') {
-                odayaKatil(odaInput.value.trim());
+                // Oda adının başına estetik amaçlı # ekliyoruz
+                let temizOda = odaInput.value.trim().replace('#', '');
+                odayaKatil('#' + temizOda);
                 odaInput.value = '';
             }
         }
 
-        // Ekrana yazı yazdırma yardımcı fonksiyonları
         function mesajEkle(kullanici, mesaj) {
             const p = document.createElement('div');
             p.className = 'mesaj';
-            p.innerHTML = `<strong>${kullanici}:</strong> ${mesaj}`;
+            p.innerHTML = `<strong>[${kullanici}]:</strong> ${mesaj}`;
             const pencere = document.getElementById('chat-penceresi');
             pencere.appendChild(p);
             pencere.scrollTop = pencere.scrollHeight;
@@ -110,19 +126,18 @@ html
 
         function sistemMesajiEkle(metin) {
             const p = document.createElement('div');
-            p.className = 'mesaj sistem-mesaji';
-            p.innerText = metin;
+            p.className = 'mesaj';
+            p.innerHTML = `<span class="sistem-mesaji">⚙️ ${metin}</span>`;
             const pencere = document.getElementById('chat-penceresi');
             pencere.appendChild(p);
             pencere.scrollTop = pencere.scrollHeight;
         }
 
-        // Enter tuşu ile mesaj gönderme entegrasyonu
         document.getElementById('mesaj-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') mesajGonder();
         });
 
-        // İlk açılışta Genel odasına bağlan
+        // İlk açılış
         odayaKatil('Genel');
     </script>
 </body>
