@@ -32,22 +32,22 @@
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         
         #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; min-height: 200px; }
-        .mesaj { margin-bottom: 10px; font-size: 15px; padding: 6px 10px; border-radius: 6px; }
+        .mesaj { margin-bottom: 10px; font-size: 15px; padding: 6px 10px; border-radius: 6px; width: 100%; box-sizing: border-box; }
         
-        /* Yetki Tasarımları */
+        /* Rol Tasarımları */
         .admin-mesaj { background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; color: #fff; }
         .mod-mesaj { background-color: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; color: #fff; }
-        .etiket { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; color: white; }
+        .etiket { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; color: white; display: inline-block; }
         .etiket-kurucu { background-color: #ef4444; }
         .etiket-mod { background-color: #10b981; }
         .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; margin-bottom: 5px; width: 100%; box-sizing: border-box; }
         
-        /* Mesaj Paneli */
+        /* Alt Mesaj Paneli */
         .mesaj-paneli { display: flex; gap: 10px; }
         #mesaj-input { flex-grow: 1; padding: 12px 15px; background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; border-radius: 6px; outline: none; }
         #gonder-btn { background-color: #2563eb; color: white; border: none; border-radius: 6px; padding: 0 20px; font-weight: bold; cursor: pointer; }
 
-        /* Pop-up Menü */
+        /* Yönetim Açılır Menüsü */
         #yonetim-menusu { position: absolute; background: #2d2d2d; border: 1px solid #454545; border-radius: 6px; display: none; flex-direction: column; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         #yonetim-menusu button { background: none; border: none; color: white; padding: 10px 15px; text-align: left; cursor: pointer; font-size: 13px; width: 100%; box-sizing: border-box; }
         #yonetim-menusu button:hover { background: #404040; }
@@ -55,13 +55,13 @@
 </head>
 <body>
 
-    <!-- SOL PANEL: Sabit Odalar -->
+    <!-- SOL PANEL -->
     <div class="sol-panel">
         <h3>💬 Odalar</h3>
         <div id="oda-listesi-alanı" class="oda-listesi"></div>
     </div>
 
-    <!-- ANA PANEL: Sohbet Alanı -->
+    <!-- ANA PANEL -->
     <div class="ana-panel">
         <div class="durum-bilgisi">
             Şu anki Oda: <span id="aktif-oda">Genel</span>
@@ -83,13 +83,13 @@
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Kimler Var -->
+    <!-- SAĞ PANEL -->
     <div class="sag-panel">
         <h3>👥 Kimler Var (<span id="aktif-sayi">3</span>)</h3>
         <div id="user-listesi-alani" class="user-listesi"></div>
     </div>
 
-    <!-- Yönetim Sağ Tık Menüsü -->
+    <!-- Pop-up Menü -->
     <div id="yonetim-menusu">
         <button id="menu-mod-btn">🟢 Moderatör Yap</button>
         <button id="menu-uye-btn">⚪ Yetkiyi Geri Al</button>
@@ -97,22 +97,22 @@
     </div>
 
     <script>
-        // Sayfa tamamen yüklenmeden hiçbir mantık çalışmayacak (Hataları önleyen ana kısım)
-        document.addEventListener("DOMContentLoaded", function() {
+        // İnternet ortamında en kararlı çalışan tarayıcı yükleme metodu
+        window.addEventListener('load', function() {
             let mevcutOda = 'Genel';
             let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Destek']; 
             const ADMIN_RUMUZU = "Kral"; 
             
             let kullanicilar = [
-                { id: "1", nick: "Kral", yetki: "Kurucu" },
-                { id: "2", nick: "Ahmet", yetki: "Kullanıcı" },
-                { id: "3", nick: "Ayşe", yetki: "Kullanıcı" }
+                { id: "user_1", nick: "Kral", yetki: "Kurucu" },
+                { id: "user_2", nick: "Ahmet", yetki: "Kullanıcı" },
+                { id: "user_3", nick: "Ayşe", yetki: "Kullanıcı" }
             ];
             
             let secilenKullaniciNick = "";
             let banliKullanicilar = [];
 
-            // Element Tanımlamaları
+            // DOM Elementleri
             const usernameInput = document.getElementById('username-input');
             const mesajInput = document.getElementById('mesaj-input');
             const gonderBtn = document.getElementById('gonder-btn');
@@ -126,28 +126,35 @@
             const odaListeAlani = document.getElementById('oda-listesi-alanı');
             const yonetimMenusu = document.getElementById('yonetim-menusu');
 
-            // Başlangıç Çalıştırmaları
-            odaListesiniGuncelle();
-            kullaniciListesiniGuncelle();
-            adminArayuzAyarla(usernameInput.value.trim());
-            sistemMesajiEkle(`"Genel" odasına giriş yapıldı. Mesaj alanı aktif.`);
-
-            // Giriş Yapan Kişi Nick Değiştirirse
-            usernameInput.addEventListener('input', function() {
-                let yeniNick = usernameInput.value.trim();
-                if(yeniNick === "") yeniNick = "Misafir";
-
-                let ben = kullanicilar.find(u => u.id === "1");
-                if (ben) {
-                    ben.nick = yeniNick;
-                    ben.yetki = (yeniNick === ADMIN_RUMUZU) ? "Kurucu" : "Kullanıcı";
-                }
-
-                adminArayuzAyarla(yeniNick);
+            // İlk Kurulum Fonksiyonları
+            function baslat() {
+                odaListesiniGuncelle();
                 kullaniciListesiniGuncelle();
-            });
+                if(usernameInput) {
+                    adminArayuzAyarla(usernameInput.value.trim());
+                }
+                sistemMesajiEkle(`"Genel" odasına giriş yapıldı. Mesaj alanı aktif.`);
+            }
+
+            // Nick değişim takibi
+            if(usernameInput) {
+                usernameInput.addEventListener('input', function() {
+                    let yeniNick = usernameInput.value.trim();
+                    if(yeniNick === "") yeniNick = "Misafir";
+
+                    let ben = kullanicilar.find(u => u.id === "user_1");
+                    if (ben) {
+                        ben.nick = yeniNick;
+                        ben.yetki = (yeniNick === ADMIN_RUMUZU) ? "Kurucu" : "Kullanıcı";
+                    }
+
+                    adminArayuzAyarla(yeniNick);
+                    kullaniciListesiniGuncelle();
+                });
+            }
 
             function adminArayuzAyarla(nick) {
+                if(!usernameInput || !adminOdaAlani) return;
                 if (nick === ADMIN_RUMUZU) {
                     usernameInput.style.color = "#ef4444";
                     adminOdaAlani.style.display = "flex";
@@ -157,8 +164,9 @@
                 }
             }
 
-            // Sağ Paneli Güncelleme
+            // Sağ Panel Yenileme
             function kullaniciListesiniGuncelle() {
+                if(!userListeAlani || !aktifSayiAlani) return;
                 userListeAlani.innerHTML = '';
                 aktifSayiAlani.innerText = kullanicilar.length;
 
@@ -170,45 +178,51 @@
                     if (user.yetki === 'Kurucu') rozet = '<span class="etiket etiket-kurucu">Kral</span>';
                     if (user.yetki === 'Moderatör') rozet = '<span class="etiket etiket-mod">Mod</span>';
                     
-                    div.innerHTML = `<span>${user.nick}</span> ${rozet}`;
-                    
-                    div.onclick = function(e) {
-                        const gecerliNick = usernameInput.value.trim();
-                        if (gecerliNick === ADMIN_RUMUZU && user.id !== "1") {
-                            e.stopPropagation();
 Kodu dikkatli kullanın.
-secilenKullaniciNick = user.nick;
-menuyuGoster(e.clientX, e.clientY);
+div.innerHTML = <span>${user.nick}</span> ${rozet};
+div.onclick = function(e) { 
+if(!usernameInput) return; 
+const gerirliNick = usernameInput.value.trim(); 
+if (gecerliNick === ADMIN_RUMUZU && user.id !== "user_1") { 
+e.stopPropagation(); 
+secilenKullaniciNick = user.nick; 
+menuyuGoster(e.clientX, e.clientY); 
+} 
+}; 
+userListeAlani.appendChild(div); 
+}); 
 }
-};
-userListeAlani.appendChild(div);
-});
+// Sol Panel Güncelleme 
+fonksiyonu odaListesiniGuncelle() { 
+if(!odaListeAlani) return; 
+odaListeAlani.innerHTML = ''; 
+acikOdalar.forEach(oda => { 
+const btn = document.createElement('button'); 
+btn.className = oda-butonu ${oda === mevcutOda ? 'aktif' : ''}; 
+btn.innerText = oda; 
+btn.onclick = function() { odayaKatil(oda); }; 
+odaListeAlani.appendChild(btn); 
+}); 
 }
-// Sol Paneli Güncelleme
-function odaListesiniGuncelle() {
-odaListeAlani.innerHTML = '';
-acikOdalar.forEach(oda => {
-const btn = document.createElement('button');
-btn.className = oda-butonu ${oda === mevcutOda ? 'aktif' : ''};
-btn.innerText = oda;
-btn.onclick = function() { odayaKatil(oda); };
-odaListeAlani.appendChild(btn);
-});
+function roomKill(roomName) { 
+currentRoom = roomName; 
+if(activeRoomEticle) activeRoomEticle.innerText = currentRoom; 
+if(chatWindow) chatWindow.innerHTML = ''; 
+AddMessage( "${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.); 
+UpdateRoomList(); 
 }
-function odayaKatil(odaAdi) {
-mevcutOda = odaAdi;
-aktifOdaEtiketi.innerText = mevcutOda;
-chatPenceresi.innerHTML = '';
-sistemMesajiEkle("${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.);
-odaListesiniGuncelle();
-}
-// Mesaj Gönderme Tetikleyicileri
+// Mesaj Gönderme Buton ve Tuş Yönetimi
+if(gonderBtn) {
 gonderBtn.onclick = mesajGonder;
+}
+if(mesajInput) {
 mesajInput.addEventListener('keypress', function(e) {
 if (e.key === 'Enter') mesajGonder();
 });
-function mesajGonder() {
-const username = usernameInput.value.trim() || 'Misafir';
+}
+function mesajGonder() { 
+if(!mesajInput || !usernameInput) return; 
+const username = usernameInput.value.trim() || 'Misafir'; 
 if (mesajInput.value.trim() === '') return;
 if (banliKullanicilar.includes(username)) {
 alert("Yasaklandınız! Bu odada mesaj yazamazsınız.");
@@ -222,8 +236,10 @@ mesajEkle(username, mesajInput.value.trim(), benimYetkim);
 mesajInput.value = '';
 mesajInput.focus();
 }
-// Oda Açma Tetikleyicisi
+// Oda Açma Buton Yönetimi
+if(odaAcBtn) {
 odaAcBtn.onclick = function() {
+if(!usernameInput || !odaInput) return;
 if (usernameInput.value.trim() !== ADMIN_RUMUZU) {
 alert("Oda kurma yetkisi sadece Kurucuya aittir!");
 return;
@@ -235,7 +251,9 @@ odayaKatil(yeniOdaAdi);
 odaInput.value = '';
 }
 };
+}
 function mesajEkle(kullanici, metin, yetki) {
+if(!chatPenceresi) return;
 const p = document.createElement('div');
 p.className = 'mesaj';
 if (yetki === "Kurucu" || kullanici === ADMIN_RUMUZU) {
@@ -247,28 +265,33 @@ p.innerHTML = <span class="etiket etiket-mod">Mod</span><strong>[${kullanici}]:<
 } else {
 p.innerHTML = <strong>[${kullanici}]:</strong> ${metin};
 }
-chatPenceresi.appendChild(p);
-chatPenceresi.scrollTop = chatPenceresi.scrollHeight;
+chatPenceresi.appendChild(p); 
+chatPenceresi.scrollTop = chatPenceresi.scrollHeight; 
 }
-function sistemMesajiEkle(metin) {
-const p = document.createElement('div');
-p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
-chatPenceresi.appendChild(p);
-chatPenceresi.scrollTop = chatPenceresi.scrollHeight;
+fonksiyon sistemMesajiEkle(metin) { 
+eğer (chatPenceresi) yoksa geri dön; 
+const p = document.createElement('div'); 
+p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>; 
+chatPenceresi.appendChild(p); 
+chatPenceresi.scrollTop = chatPenceresi.scrollHeight; 
 }
-// Menü Yönetimi
+// Sağ Tık Pop-up Yönetimi
 function menuyuGoster(x, y) {
+if(!yonetimMenusu) return;
 yonetimMenusu.style.display = "flex";
 yonetimMenusu.style.left = ${x}px;
 yonetimMenusu.style.top = ${y}px;
 }
 function menuyuKapat() {
-yonetimMenusu.style.display = "none";
+if(yonetimMenusu) yonetimMenusu.style.display = "none";
 }
 document.addEventListener('click', menuyuKapat);
-document.getElementById('menu-mod-btn').onclick = function() { yetkiVer('Moderatör'); };
-document.getElementById('menu-uye-btn').onclick = function() { yetkiVer('Kullanıcı'); };
-document.getElementById('menu-ban-btn').onclick = banla;
+const mModBtn = document.getElementById('menu-mod-btn'); 
+const mUyeBtn = document.getElementById('menu-uye-btn'); 
+const mBanBtn = document.getElementById('menu-ban-btn');
+if(mModBtn) mModBtn.onclick = function() { yetkiVer('Moderatör'); };
+if(mUyeBtn) mUyeBtn.onclick = function() { yetkiVer('Kullanıcı'); };
+if(mBanBtn) mBanBtn.onclick = banla;
 function yetkiVer(yeniYetki) {
 let user = kullanicilar.find(u => u.nick === secilenKullaniciNick);
 if (user) {
@@ -287,4 +310,6 @@ kullaniciListesiniGuncelle();
 }
 menuyuKapat();
 }
+// Sistemi tamamen güvenli şekilde tetikle
+baslat();
 });
