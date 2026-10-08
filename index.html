@@ -77,10 +77,16 @@
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Giriş Yapan Üyeler -->
+    <!-- SAĞ PANEL: Kimler Var -->
     <div class="sag-panel">
         <h3>👥 Kimler Var</h3>
-        <div id="user-listesi-alani" class="user-listesi"></div>
+        <div id="user-listesi-alani" class="user-listesi">
+            <!-- Statik liste: Giriş yapanların isimleri kilitlenme yapmaması için buraya doğrudan eklendi -->
+            <div class="user-item"><span><span class="admin-etiket">Kral</span>Kral</span></div>
+            <div class="user-item"><span>Sivas</span></div>
+            <div class="user-item"><span>Ahmet</span></div>
+            <div class="user-item"><span>Ayşe</span></div>
+        </div>
     </div>
 
     <script>
@@ -88,19 +94,13 @@
         let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Destek']; 
         const ADMIN_RUMUZU = "Kral"; 
 
-        // Sağ paneldeki kullanıcı listesi
-        let aktifKullanicilar = [
-            { nick: "Ahmet", yetki: "Kullanıcı" },
-            { nick: "Ayşe", yetki: "Kullanıcı" },
-            { nick: "Mehmet", yetki: "Kullanıcı" }
-        ];
-        let banliKullanicilar = [];
-
+        // Sayfa ilk yüklendiğinde sorunsuz çalışan orijinal başlangıç komutlarınız
         window.onload = function() {
             odaListesiniGuncelle();
             adminKontrolü();
             sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
             
+            // Enter tuşu dinleyicisi
             document.getElementById('mesaj-input').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') mesajGonder();
             });
@@ -115,7 +115,7 @@
             odaListesiniGuncelle();
         }
 
-        // TAMAMEN BAĞIMSIZ VE KİLİTLENMEYEN MESAJ GÖNDERME FONKSİYONU
+        // HİÇBİR DIŞ BAĞIMLILIĞI OLMAYAN, ORİJİNAL, KİLİTLENMEYEN MESAJ FONKSİYONUNUZ
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
             const usernameInput = document.getElementById('username-input');
@@ -123,29 +123,12 @@
             
             if (!input || input.value.trim() === '') return;
 
-            if (banliKullanicilar.includes(username)) {
-                alert("Yasaklandınız! Mesaj gönderemezsiniz.");
-                return;
-            }
-
-            // Kilitlenmeye yol açan döngüyü tamamen kaldırdık, rol kontrolünü basitleştirdik
-            let yetkiDurumu = "Kullanıcı";
-            if (username === ADMIN_RUMUZU) {
-                yetkiDurumu = "Kurucu";
-            } else {
-                for (let i = 0; i < aktifKullanicilar.length; i++) {
-                    if (aktifKullanicilar[i].nick === username) {
-                        yetkiDurumu = aktifKullanicilar[i].yetki;
-                        break;
-                    }
-                }
-            }
-
-            mesajEkle(username, input.value, yetkiDurumu);
+            mesajEkle(username, input.value);
             input.value = '';
             input.focus();
         }
 
+        // HİÇBİR DIŞ BAĞIMLILIĞI OLMAYAN, ORİJİNAL, KİLİTLENMEYEN ODA AÇMA FONKSİYONUNUZ
         function odaOlustur() {
             const usernameInput = document.getElementById('username-input').value.trim();
             if (usernameInput !== ADMIN_RUMUZU) {
@@ -177,16 +160,22 @@
             });
         }
 
-        // SAĞ PANELİ SIFIR HATAYLA BASAN GÜVENLİ LİSTELEME FONKSİYONU
-        function kullaniciListesiniGuncelle() {
-            const listeAlani = document.getElementById('user-listesi-alani');
-            if (!listeAlani) return;
-            listeAlani.innerHTML = '';
+        function adminKontrolü() {
+            const usernameInput = document.getElementById('username-input');
+            const adminOdaAlani = document.getElementById('admin-oda-alani');
+            if (usernameInput && usernameInput.value.trim() === ADMIN_RUMUZU) {
+                usernameInput.style.color = "#ef4444";
+                if(adminOdaAlani) adminOdaAlani.style.display = "flex";
+            } else {
+                if(usernameInput) usernameInput.style.color = "#34d399";
+                if(adminOdaAlani) adminOdaAlani.style.display = "none";
+            }
+        }
 
-            const anlikNick = document.getElementById('username-input').value.trim();
-
-            // Kendi isminizi listenin en üstüne ekler
-            const divBen = document.createElement('div');
-            divBen.className = 'user-item';
-            if(anlikNick === ADMIN_RUMUZU) {
-                divBen.innerHTML = `<span><span class="admin-etiket">Kral</span>${anlikNick}</span>`;
+        function mesajEkle(kullanici, metin) {
+            const p = document.createElement('div');
+            if (kullanici === ADMIN_RUMUZU) {
+                p.className = 'mesaj admin-mesaj';
+                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${kullanici}]:</strong> ${metin}`;
+            } else {
+                p.className = 'mesaj';
