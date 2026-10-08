@@ -4,14 +4,25 @@ html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat | Sıfırlanmış Sürüm</title>
+    <title>Kral Chat | Ortak Sunuculu Canlı Sistem</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
-        .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
+        
+        /* Sol Panel - Odalar */
+        .sol-panel { width: 200px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
         .sol-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
         .oda-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
         .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; }
         .oda-butonu.aktif { background-color: #10b981; color: white; border-color: #10b981; font-weight: bold; }
+        
+        /* Sağ Panel - Kullanıcı Listesi */
+        .sag-panel { width: 180px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
+        .sag-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
+        .kullanici-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        .kullanici-satir { background-color: #2d2d2d; padding: 6px 10px; border-radius: 4px; font-size: 13px; border-left: 3px solid #34d399; }
+        .kullanici-satir.admin { border-left-color: #ef4444; color: #fca5a5; font-weight: bold; }
+
+        /* Orta Panel - Sohbet Alanı */
         .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
         .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; }
         #aktif-oda { font-weight: bold; color: #10b981; }
@@ -22,6 +33,8 @@ html
         #username-input { flex-grow: 1; font-weight: bold; color: #ef4444; width: 80px; text-align: center; }
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
+        
+        /* Mesaj Tasarımları */
         .mesaj { margin-bottom: 10px; font-size: 15px; }
         .mesaj strong { color: #34d399; margin-right: 5px; }
         .admin-mesaj { background-color: rgba(239, 68, 68, 0.1); padding: 6px 12px; border-radius: 6px; border-left: 3px solid #ef4444; color: #fff; }
@@ -35,13 +48,13 @@ html
 </head>
 <body>
 
+    <!-- SOL PANEL: Odalar -->
     <div class="sol-panel">
         <h3>💬 Aktif Odalar</h3>
         <div id="oda-listesi-alanı" class="oda-listesi"></div>
-        <!-- Eski bozuk hafızayı tek tıkla silmek için acil durum butonu -->
-        <button onclick="hafizayiTemizle()" style="background-color: #ef4444; color: white; border: none; padding: 8px; border-radius: 4px; margin-top: 15px; cursor: pointer; font-size: 12px;">Hafızayı Sıfırla</button>
     </div>
 
+    <!-- ORTA PANEL: Sohbet -->
     <div class="ana-panel">
         <div class="durum-bilgisi">
             Şu anki Oda: <span id="aktif-oda">Genel</span>
@@ -63,27 +76,102 @@ html
         </div>
     </div>
 
+    <!-- SAĞ PANEL: Kullanıcılar -->
+    <div class="sag-panel">
+        <h3>👥 Çevrimiçi</h3>
+        <div id="kullanici-listesi-alani" class="kullanici-listesi"></div>
+    </div>
+
+    <!-- Canlı internet bağlantısını kuran ücretsiz, tarayıcı uyumlu küresel kütüphane -->
+    <script src="https://pubnub.com"></script>
+
     <script>
-        // Tarayıcı kilitlenmesini önlemek için eski hafıza kayıtlarını kod düzeyinde tamamen siliyoruz
-        localStorage.removeItem('sabit_odalar'); 
-        
         let mevcutOda = 'Genel';
-        let acikOdalar = ['Genel']; // Temiz başlangıç listesi
+        // Sabit odalar listesi internet ortak veri tabanında tutulana kadar başlangıç listesi
+        let acikOdalar = ['Genel', '#Sohbet', '#Oyun']; 
         const ADMIN_RUMUZU = "Kral"; 
 
+        // Rastgele kullanıcı kimliği (çakışmaları önlemek için)
+        const KULLANICI_ID = "user_" + Math.random().toString(16).slice(2);
+
+        // Küresel mesaj ağını başlatıyoruz (Tarayıcı engellerine takılmaz)
+        const pubnub = new PubNub({
+            publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', 
+            subscribeKey: 'sub-c-5fec34d2-f67f-442e-a567-2703a11fa677',
+            userId: KULLANICI_ID
+        });
+
         function odayaKatil(odaAdi) {
+            // Eski odadan güvenle çıkış yap
+            try { pubnub.unsubscribe({ channels: [mevcutOda] }); } catch(e) {}
+            
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
+            document.getElementById('chat-penceresi').innerHTML = '';
             
-            const pencere = document.getElementById('chat-penceresi');
-            if (pencere) {
-                pencere.innerHTML = '';
-                const p = document.createElement('div');
-                p.className = 'mesaj';
-                p.innerHTML = `<span class="sistem-mesaji">⚙️ "${mevcutOda}" odasına giriş yaptınız.</span>`;
-                pencere.appendChild(p);
-            }
+            // Yeni odaya internet üzerinden bağlan
+            pubnub.subscribe({ 
+                channels: [mevcutOda],
+                withPresence: true // Sağ paneldeki kullanıcı listesini anlık takip etmek için açık
+            });
+
+            sistemMesajiEkle(`"${mevcutOda}" canlı sohbet odasına bağlandınız.`);
             odaListesiniGuncelle();
+        }
+
+        // İnternet üzerinden yeni bir mesaj geldiğinde veya biri odaya girdiğinde tetiklenen dinleyici
+        pubnub.addListener({
+            message: function(event) {
+                // Gelen mesajı ekrana bas
+                mesajEkle(event.message.user, event.message.text);
+            },
+            presence: function(event) {
+                // Odadaki kullanıcı hareketlerini algıla (Giriş/Çıkış) ve sağ paneli güncelle
+                odadakiKullanicilariYenile();
+            }
+        });
+
+        function mesajGonder() {
+            const input = document.getElementById('mesaj-input');
+            const usernameInput = document.getElementById('username-input');
+            const username = usernameInput ? usernameInput.value.trim() : 'Misafir';
+            
+            if (!input || input.value.trim() === '') return;
+
+            // Mesajı internetteki sunucuya fırlat (Böylece tüm farklı tarayıcılara aynı anda gider)
+            pubnub.publish({
+                channel: mevcutOda,
+                message: { user: username, text: input.value }
+            });
+
+            input.value = '';
+        }
+
+        function odadakiKullanicilariYenile() {
+            pubnub.hereNow({
+                channels: [mevcutOda],
+                includeUUIDs: true
+            }, function (status, response) {
+                const listeAlani = document.getElementById('kullanici-listesi-alani');
+                if (!listeAlani || !response.channels[mevcutOda]) return;
+                
+                listeAlani.innerHTML = '';
+                const occupants = response.channels[mevcutOda].occupants;
+                
+                // Odadaki her kişi için sağ panele bir kutu ekle
+                occupants.forEach((user, index) => {
+                    const div = document.createElement('div');
+                    // Örnek amaçlı ilk giren veya admin rumuzlu kişileri listeleme mantığı
+                    if (index === 0) {
+                        div.className = 'kullanici-satir admin';
+                        div.innerText = "👑 Kral";
+                    } else {
+                        div.className = 'kullanici-satir';
+                        div.innerText = "👤 Misafir_" + user.uuid.slice(-4);
+                    }
+                    listeAlani.appendChild(div);
+                });
+            });
         }
 
         function odaOlustur() {
@@ -108,69 +196,3 @@ html
             const listeAlani = document.getElementById('oda-listesi-alanı');
             if (!listeAlani) return;
             listeAlani.innerHTML = '';
-            acikOdalar.forEach(oda => {
-                const btn = document.createElement('button');
-                btn.className = 'oda-butonu';
-                if(oda === mevcutOda) btn.className += ' aktif';
-                btn.innerText = oda;
-                btn.onclick = function() { odayaKatil(oda); };
-                listeAlani.appendChild(btn);
-            });
-        }
-
-        function adminKontrolü() {
-            const usernameInput = document.getElementById('username-input');
-            const adminOdaAlani = document.getElementById('admin-oda-alani');
-            
-            if (usernameInput && usernameInput.value.trim() === ADMIN_RUMUZU) {
-                usernameInput.style.color = "#ef4444";
-                if(adminOdaAlani) adminOdaAlani.style.display = "flex";
-            } else {
-                if(usernameInput) usernameInput.style.color = "#34d399";
-                if(adminOdaAlani) adminOdaAlani.style.display = "none";
-            }
-        }
-
-        function mesajGonder() {
-            const input = document.getElementById('mesaj-input');
-            const username = document.getElementById('username-input').value || 'Misafir';
-            
-            if (!input || input.value.trim() === '') return;
-
-            const p = document.createElement('div');
-            if (username === ADMIN_RUMUZU) {
-                p.className = 'mesaj admin-mesaj';
-                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${username}]:</strong> ${input.value}`;
-            } else {
-                p.className = 'mesaj';
-                p.innerHTML = `<strong>[${username}]:</strong> ${input.value}`;
-            }
-            
-            const pencere = document.getElementById('chat-penceresi');
-            if(pencere) {
-                pencere.appendChild(p);
-                pencere.scrollTop = pencere.scrollHeight;
-            }
-            input.value = '';
-        }
-
-        function hafizayiTemizle() {
-            localStorage.clear();
-            alert("Tarayıcı hafızası sıfırlandı! Sayfa yeniden yüklenecek.");
-            location.reload();
-        }
-
-        // Sayfa yüklendiğinde buton kilitlerini tamamen açar
-        window.onload = function() {
-            const mesajInput = document.getElementById('mesaj-input');
-            if(mesajInput) {
-                mesajInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') mesajGonder();
-                });
-            }
-            odayaKatil('Genel');
-            adminKontrolü();
-        };
-    </script>
-</body>
-</html>
