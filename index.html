@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat | Tam Sürüm</title>
+    <title>Kral Chat | Sabit Sistem</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
@@ -18,7 +18,10 @@
         input[type="text"] { background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; padding: 10px 15px; border-radius: 6px; outline: none; }
         #admin-oda-alani { display: flex; gap: 10px; flex-grow: 2; }
         #oda-input { width: 100%; }
-        #username-input { flex-grow: 1; font-weight: bold; color: #ef4444; width: 80px; text-align: center; }
+        
+        /* Kullanıcı adı giriş alanı tasarımı */
+        #username-input { flex-grow: 1; font-weight: bold; color: #ef4444 !important; width: 80px; text-align: center; background-color: #2d2d2d; }
+        
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
         .mesaj { margin-bottom: 10px; font-size: 15px; }
@@ -50,8 +53,8 @@
         </div>
 
         <div class="kontrol-paneli">
-            <!-- Otomatik giriş ismi Kral olarak ayarlandı -->
-            <input type="text" id="username-input" value="Kral" oninput="adminKontrolü()">
+            <!-- autocomplete="off" ve value="Kral" eklenerek tarayıcı engellendi -->
+            <input type="text" id="username-input" value="Kral" autocomplete="off" oninput="adminKontrolü()">
             <div id="admin-oda-alani">
                 <input type="text" id="oda-input" placeholder="Yeni oda adı yazın (Sadece Admin)...">
                 <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
@@ -73,11 +76,7 @@
 
     <script>
         let mevcutOda = 'Genel';
-        
-        // Odaların kalıcı olarak hafızada kilitli kalması için veri tabanı kaydı
         let acikOdalar = JSON.parse(localStorage.getItem('kral_sabit_odalar')) || ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
-        
-        // ADMIN ADI KRAL OLARAK SAKLANDI
         const ADMIN_RUMUZU = "Kral"; 
         let iletisimKanali;
 
@@ -93,7 +92,7 @@
                 mesajEkle(event.data.user, event.data.text);
             };
 
-            sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesajlar asla otomatik silinmez.`);
+            sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı.`);
             odaListesiniGuncelle();
             kullaniciListesiniYenile();
         }
@@ -117,7 +116,6 @@
             if (!listeAlani) return;
             listeAlani.innerHTML = '';
             
-            // Sağdaki listede isminizin Kral olarak görünmesi sağlandı
             const adminDiv = document.createElement('div');
             adminDiv.className = 'kullanici-satir admin';
             adminDiv.innerText = `👑 ${ADMIN_RUMUZU}`;
@@ -184,3 +182,31 @@
                 p.innerHTML = `<strong>[${kullanici}]:</strong> ${metin}`;
             }
             const pencere = document.getElementById('chat-penceresi');
+            if(pencere) {
+                pencere.appendChild(p);
+Kodu dikkatli kullanın.
+pencere.scrollTop = pencere.scrollHeight;
+}
+}
+function sistemMesajiEkle(metin) {
+const p = document.createElement('div');
+p.className = 'mesaj';
+p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
+const pencere = document.getElementById('chat-penceresi');
+if(pencere) pencere.appendChild(p);
+}
+window.addEventListener('DOMContentLoaded', () => {
+// Tarayıcı hafızasını zorla temizleyip Kral ismini dayatıyoruz
+const usernameInput = document.getElementById('username-input');
+if(usernameInput) usernameInput.value = "Kral";
+const mesajInput = document.getElementById('mesaj-input');
+if(mesajInput) {
+mesajInput.addEventListener('keypress', function(e) {
+if (e.key === 'Enter') { mesajGonder(); e.preventDefault(); }
+});
+}
+const gonderBtn = document.getElementById('gonder-btn');
+if(gonderBtn) { gonderBtn.onclick = mesajGonder; }
+odayaKatil('Genel');
+adminKontrolü();
+});
