@@ -180,34 +180,3 @@
             const p = document.createElement('div');
             if (kullanici === ADMIN_RUMUZU) {
                 p.className = 'mesaj admin-mesaj';
-Kodu dikkatli kullanın.
-p.innerHTML = <span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${kullanici}]:</strong> ${metin};
-} else {
-p.className = 'mesaj';
-p.innerHTML = <strong>[${kullanici}]:</strong> ${metin};
-}
-const pencere = document.getElementById('chat-penceresi');
-if(pencere) {
-pencere.appendChild(p);
-pencere.scrollTop = pencere.scrollHeight;
-}
-}
-function sistemMesajiEkle(metin) {
-const p = document.createElement('div');
-p.className = 'mesaj';
-p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
-const pencere = document.getElementById('chat-penceresi');
-if(pencere) pencere.appendChild(p);
-}
-window.addEventListener('DOMContentLoaded', () => {
-const mesajInput = document.getElementById('mesaj-input');
-if(mesajInput) {
-mesajInput.addEventListener('keypress', function(e) {
-if (e.key === 'Enter') { mesajGonder(); e.preventDefault(); }
-});
-}
-const gonderBtn = document.getElementById('gonder-btn');
-if(gonderBtn) { gonderBtn.onclick = mesajGonder; }
-odayaKatil('Genel');
-adminKontrolü();
-});
