@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erhan Chat | Tam Sürüm</title>
+    <title>Kral Chat | Tam Sürüm</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
@@ -50,7 +50,8 @@
         </div>
 
         <div class="kontrol-paneli">
-            <input type="text" id="username-input" value="erhan" oninput="adminKontrolü()">
+            <!-- Otomatik giriş ismi Kral olarak ayarlandı -->
+            <input type="text" id="username-input" value="Kral" oninput="adminKontrolü()">
             <div id="admin-oda-alani">
                 <input type="text" id="oda-input" placeholder="Yeni oda adı yazın (Sadece Admin)...">
                 <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
@@ -70,29 +71,24 @@
         <div id="kullanici-listesi-alani" class="kullanici-listesi"></div>
     </div>
 
-    <!-- DIŞ BAĞLANTI KÜTÜPHANELERİNİ TAMAMEN KALDIRDIK. KİLİTLENME İHTİMALİ SIFIRDIR -->
     <script>
         let mevcutOda = 'Genel';
         
-        // Odaların sayfa kapatılsa bile gitmemesi için tarayıcının kendi veri tabanına kaydediyoruz
-        let acikOdalar = JSON.parse(localStorage.getItem('erhan_sabit_odalar')) || ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
-        const ADMIN_RUMUZU = "erhan"; 
-
-        // Sunucusuz çalışan bağımsız tarayıcı iletişim köprüsü
+        // Odaların kalıcı olarak hafızada kilitli kalması için veri tabanı kaydı
+        let acikOdalar = JSON.parse(localStorage.getItem('kral_sabit_odalar')) || ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
+        
+        // ADMIN ADI KRAL OLARAK SAKLANDI
+        const ADMIN_RUMUZU = "Kral"; 
         let iletisimKanali;
 
         function odayaKatil(odaAdi) {
-            // Eski odanın canlı hattını kapat
             if (iletisimKanali) { iletisimKanali.close(); }
             
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
             document.getElementById('chat-penceresi').innerHTML = '';
             
-            // Tarayıcılar arasında bu odaya özel şifresiz, canlı bir hat açar
             iletisimKanali = new BroadcastChannel('kanal_' + mevcutOda);
-            
-            // Farklı sekmelerden/tarayıcılardan bu odaya mesaj geldiğinde yakalar
             iletisimKanali.onmessage = function(event) {
                 mesajEkle(event.data.user, event.data.text);
             };
@@ -110,11 +106,8 @@
             if (!input || input.value.trim() === '') return;
 
             const mesajVerisi = { user: username, text: input.value };
-
-            // Mesajı canlı hattan diğer tarayıcılara gönderir
             iletisimKanali.postMessage(mesajVerisi);
             
-            // Mesajı kendi ekranımıza da basar
             mesajEkle(username, input.value);
             input.value = '';
         }
@@ -124,10 +117,10 @@
             if (!listeAlani) return;
             listeAlani.innerHTML = '';
             
-            // Odadaki kullanıcı listesini simüle eden kararlı alan
+            // Sağdaki listede isminizin Kral olarak görünmesi sağlandı
             const adminDiv = document.createElement('div');
             adminDiv.className = 'kullanici-satir admin';
-            adminDiv.innerText = `👑 erhan`;
+            adminDiv.innerText = `👑 ${ADMIN_RUMUZU}`;
             listeAlani.appendChild(adminDiv);
 
             const userDiv = document.createElement('div');
@@ -148,8 +141,7 @@
                 
                 if (!acikOdalar.includes(yeniOdaAdi)) { 
                     acikOdalar.push(yeniOdaAdi); 
-                    // Odaları tarayıcı hafızasına kalıcı kaydeder (Sayfa kapansa da gitmez)
-                    localStorage.setItem('erhan_sabit_odalar', JSON.stringify(acikOdalar));
+                    localStorage.setItem('kral_sabit_odalar', JSON.stringify(acikOdalar));
                 }
                 odayaKatil(yeniOdaAdi);
                 odaInput.value = '';
@@ -183,3 +175,12 @@
         }
 
         function mesajEkle(kullanici, metin) {
+            const p = document.createElement('div');
+            if (kullanici === ADMIN_RUMUZU) {
+                p.className = 'mesaj admin-mesaj';
+                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${kullanici}]:</strong> ${metin}`;
+            } else {
+                p.className = 'mesaj';
+                p.innerHTML = `<strong>[${kullanici}]:</strong> ${metin}`;
+            }
+            const pencere = document.getElementById('chat-penceresi');
