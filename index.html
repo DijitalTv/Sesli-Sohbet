@@ -1,16 +1,21 @@
+html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat | Kararlı Sürüm</title>
+    <title>Kral Chat</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
+        
+        /* Sol Panel - Sabit Odalar */
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
         .sol-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
         .oda-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
         .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
         .oda-butonu.aktif { background-color: #10b981; color: white; font-weight: bold; }
+        
+        /* Ana Panel - Sohbet Alanı (Tam Ekran Genişletildi) */
         .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
         .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; }
         #aktif-oda { font-weight: bold; color: #10b981; }
@@ -20,6 +25,7 @@
         #oda-input { width: 100%; }
         #username-input { flex-grow: 1; font-weight: bold; color: #ef4444; width: 80px; text-align: center; }
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        
         #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
         .mesaj { margin-bottom: 10px; font-size: 15px; }
         .mesaj strong { color: #34d399; margin-right: 5px; }
@@ -27,23 +33,21 @@
         .admin-etiket { background-color: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; }
         .admin-isim { color: #fca5a5 !important; }
         .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; }
+        
         .mesaj-paneli { display: flex; gap: 10px; }
         #mesaj-input { flex-grow: 1; padding: 12px 15px; background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; border-radius: 6px; outline: none; }
         #gonder-btn { background-color: #2563eb; color: white; border: none; border-radius: 6px; padding: 0 20px; font-weight: bold; cursor: pointer; }
-        .sag-panel { width: 180px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
-        .sag-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
-        .kullanici-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-        .kullanici-satir { background-color: #2d2d2d; padding: 6px 10px; border-radius: 4px; font-size: 13px; border-left: 3px solid #34d399; }
-        .kullanici-satir.admin { border-left-color: #ef4444; color: #fca5a5; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <!-- SOL PANEL: Odalar -->
     <div class="sol-panel">
         <h3>💬 Sabit Odalar</h3>
         <div id="oda-listesi-alanı" class="oda-listesi"></div>
     </div>
 
+    <!-- ANA PANEL: Genişletilmiş Sohbet Alanı -->
     <div class="ana-panel">
         <div class="durum-bilgisi">
             Şu anki Oda: <span id="aktif-oda">Genel</span>
@@ -65,11 +69,6 @@
         </div>
     </div>
 
-    <div class="sag-panel">
-        <h3>👥 Çevrimiçi</h3>
-        <div id="kullanici-listesi-alani" class="kullanici-listesi"></div>
-    </div>
-
     <script>
         let mevcutOda = 'Genel';
         let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
@@ -82,7 +81,6 @@
             
             sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
             odaListesiniGuncelle();
-            kullaniciListesiniYenile();
         }
 
         function mesajGonder() {
@@ -95,22 +93,6 @@
             mesajEkle(username, input.value);
             input.value = '';
             input.focus();
-        }
-
-        function kullaniciListesiniYenile() {
-            const listeAlani = document.getElementById('kullanici-listesi-alani');
-            if (!listeAlani) return;
-            listeAlani.innerHTML = '';
-            
-            const adminDiv = document.createElement('div');
-            adminDiv.className = 'kullanici-satir admin';
-            adminDiv.innerText = `👑 ${ADMIN_RUMUZU}`;
-            listeAlani.appendChild(adminDiv);
-
-            const userDiv = document.createElement('div');
-            userDiv.className = 'kullanici-satir';
-            userDiv.innerText = `👤 Kullanıcı_Sivas`;
-            listeAlani.appendChild(userDiv);
         }
 
         function odaOlustur() {
@@ -191,3 +173,10 @@
                 };
             }
             const gonderBtn = document.getElementById('gonder-btn');
+            if(gonderBtn) { gonderBtn.onclick = mesajGonder; }
+            odayaKatil('Genel');
+            adminKontrolü();
+        });
+    </script>
+</body>
+</html>
