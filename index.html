@@ -1,10 +1,9 @@
-html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat | Canlı Sohbet Odaları</title>
+    <title>Erhan Chat | Canlı Sohbet</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
@@ -51,9 +50,10 @@ html
         </div>
 
         <div class="kontrol-paneli">
-            <input type="text" id="username-input" value="Kral" oninput="adminKontrolü()">
+            <!-- Kurucu ismi erhan olarak güncellendi -->
+            <input type="text" id="username-input" value="erhan" oninput="adminKontrolü()">
             <div id="admin-oda-alani">
-                <input type="text" id="oda-input" placeholder="Yeni oda adı yazın (Sadece Admin)...">
+                <input type="text" id="oda-input" placeholder="Yeni sabit oda adı yazın...">
                 <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
             </div>
         </div>
@@ -75,7 +75,7 @@ html
     <script>
         let mevcutOda = 'Genel';
         let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
-        const ADMIN_RUMUZU = "Kral"; 
+        const ADMIN_RUMUZU = "erhan"; // Sizin isminiz artık sistem yetkilisi
         const KULLANICI_ID = "user_" + Math.random().toString(16).slice(2);
 
         const pubnub = new PubNub({
@@ -180,4 +180,34 @@ html
             const p = document.createElement('div');
             if (kullanici === ADMIN_RUMUZU) {
                 p.className = 'mesaj admin-mesaj';
-                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong cl
+Kodu dikkatli kullanın.
+p.innerHTML = <span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${kullanici}]:</strong> ${metin};
+} else {
+p.className = 'mesaj';
+p.innerHTML = <strong>[${kullanici}]:</strong> ${metin};
+}
+const pencere = document.getElementById('chat-penceresi');
+if(pencere) {
+pencere.appendChild(p);
+pencere.scrollTop = pencere.scrollHeight;
+}
+}
+function sistemMesajiEkle(metin) {
+const p = document.createElement('div');
+p.className = 'mesaj';
+p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
+const pencere = document.getElementById('chat-penceresi');
+if(pencere) pencere.appendChild(p);
+}
+window.addEventListener('DOMContentLoaded', () => {
+const mesajInput = document.getElementById('mesaj-input');
+if(mesajInput) {
+mesajInput.addEventListener('keypress', function(e) {
+if (e.key === 'Enter') { mesajGonder(); e.preventDefault(); }
+});
+}
+const gonderBtn = document.getElementById('gonder-btn');
+if(gonderBtn) { gonderBtn.onclick = mesajGonder; }
+odayaKatil('Genel');
+adminKontrolü();
+});
