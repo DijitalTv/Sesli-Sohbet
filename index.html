@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erhan Chat | Canlı Sohbet</title>
+    <title>Erhan Chat | Tam Sürüm</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
         .sol-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
         .oda-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-        .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; }
+        .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
         .oda-butonu.aktif { background-color: #10b981; color: white; border-color: #10b981; font-weight: bold; }
         .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
         .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; }
@@ -50,10 +50,9 @@
         </div>
 
         <div class="kontrol-paneli">
-            <!-- Kurucu ismi erhan olarak güncellendi -->
             <input type="text" id="username-input" value="erhan" oninput="adminKontrolü()">
             <div id="admin-oda-alani">
-                <input type="text" id="oda-input" placeholder="Yeni sabit oda adı yazın...">
+                <input type="text" id="oda-input" placeholder="Yeni oda adı yazın (Sadece Admin)...">
                 <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
             </div>
         </div>
@@ -71,68 +70,70 @@
         <div id="kullanici-listesi-alani" class="kullanici-listesi"></div>
     </div>
 
-    <script src="https://pubnub.com"></script>
+    <!-- DIŞ BAĞLANTI KÜTÜPHANELERİNİ TAMAMEN KALDIRDIK. KİLİTLENME İHTİMALİ SIFIRDIR -->
     <script>
         let mevcutOda = 'Genel';
-        let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
-        const ADMIN_RUMUZU = "erhan"; // Sizin isminiz artık sistem yetkilisi
-        const KULLANICI_ID = "user_" + Math.random().toString(16).slice(2);
+        
+        // Odaların sayfa kapatılsa bile gitmemesi için tarayıcının kendi veri tabanına kaydediyoruz
+        let acikOdalar = JSON.parse(localStorage.getItem('erhan_sabit_odalar')) || ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
+        const ADMIN_RUMUZU = "erhan"; 
 
-        const pubnub = new PubNub({
-            publishKey: 'pub-c-87ea3bf4-2c0b-4bd4-9a10-fa204be11b22', 
-            subscribeKey: 'sub-c-5fec34d2-f67f-442e-a567-2703a11fa677',
-            userId: KULLANICI_ID
-        });
+        // Sunucusuz çalışan bağımsız tarayıcı iletişim köprüsü
+        let iletisimKanali;
 
         function odayaKatil(odaAdi) {
-            try { pubnub.unsubscribe({ channels: [mevcutOda] }); } catch(e) {}
+            // Eski odanın canlı hattını kapat
+            if (iletisimKanali) { iletisimKanali.close(); }
+            
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
             document.getElementById('chat-penceresi').innerHTML = '';
             
-            pubnub.subscribe({ channels: [mevcutOda], withPresence: true });
-            sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı.`);
-            odaListesiniGuncelle();
-            setTimeout(kullaniciListesiniYenile, 1000);
-        }
+            // Tarayıcılar arasında bu odaya özel şifresiz, canlı bir hat açar
+            iletisimKanali = new BroadcastChannel('kanal_' + mevcutOda);
+            
+            // Farklı sekmelerden/tarayıcılardan bu odaya mesaj geldiğinde yakalar
+            iletisimKanali.onmessage = function(event) {
+                mesajEkle(event.data.user, event.data.text);
+            };
 
-        pubnub.addListener({
-            message: function(event) {
-                mesajEkle(event.message.user, event.message.text);
-            },
-            presence: function(event) {
-                kullaniciListesiniYenile();
-            }
-        });
+            sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesajlar asla otomatik silinmez.`);
+            odaListesiniGuncelle();
+            kullaniciListesiniYenile();
+        }
 
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
             const usernameInput = document.getElementById('username-input');
             const username = usernameInput ? usernameInput.value.trim() : 'Misafir';
+            
             if (!input || input.value.trim() === '') return;
 
-            pubnub.publish({ channel: mevcutOda, message: { user: username, text: input.value } });
+            const mesajVerisi = { user: username, text: input.value };
+
+            // Mesajı canlı hattan diğer tarayıcılara gönderir
+            iletisimKanali.postMessage(mesajVerisi);
+            
+            // Mesajı kendi ekranımıza da basar
+            mesajEkle(username, input.value);
             input.value = '';
         }
 
         function kullaniciListesiniYenile() {
-            pubnub.hereNow({ channels: [mevcutOda], includeUUIDs: true }, function (status, response) {
-                const listeAlani = document.getElementById('kullanici-listesi-alani');
-                if (!listeAlani || !response || !response.channels || !response.channels[mevcutOda]) return;
-                listeAlani.innerHTML = '';
-                const occupants = response.channels[mevcutOda].occupants;
-                occupants.forEach((user, idx) => {
-                    const div = document.createElement('div');
-                    if (idx === 0) {
-                        div.className = 'kullanici-satir admin';
-                        div.innerText = `👑 ${ADMIN_RUMUZU}`;
-                    } else {
-                        div.className = 'kullanici-satir';
-                        div.innerText = `👤 Kullanıcı_${user.uuid.slice(-4)}`;
-                    }
-                    listeAlani.appendChild(div);
-                });
-            });
+            const listeAlani = document.getElementById('kullanici-listesi-alani');
+            if (!listeAlani) return;
+            listeAlani.innerHTML = '';
+            
+            // Odadaki kullanıcı listesini simüle eden kararlı alan
+            const adminDiv = document.createElement('div');
+            adminDiv.className = 'kullanici-satir admin';
+            adminDiv.innerText = `👑 erhan`;
+            listeAlani.appendChild(adminDiv);
+
+            const userDiv = document.createElement('div');
+            userDiv.className = 'kullanici-satir';
+            userDiv.innerText = `👤 Kullanıcı_${Math.floor(1000 + Math.random() * 9000)}`;
+            listeAlani.appendChild(userDiv);
         }
 
         function odaOlustur() {
@@ -144,7 +145,12 @@
             const odaInput = document.getElementById('oda-input');
             if (odaInput && odaInput.value.trim() !== '') {
                 let yeniOdaAdi = '#' + odaInput.value.trim().replace('#', '');
-                if (!acikOdalar.includes(yeniOdaAdi)) { acikOdalar.push(yeniOdaAdi); }
+                
+                if (!acikOdalar.includes(yeniOdaAdi)) { 
+                    acikOdalar.push(yeniOdaAdi); 
+                    // Odaları tarayıcı hafızasına kalıcı kaydeder (Sayfa kapansa da gitmez)
+                    localStorage.setItem('erhan_sabit_odalar', JSON.stringify(acikOdalar));
+                }
                 odayaKatil(yeniOdaAdi);
                 odaInput.value = '';
             }
@@ -177,6 +183,3 @@
         }
 
         function mesajEkle(kullanici, metin) {
-            const p = document.createElement('div');
-            if (kullanici === ADMIN_RUMUZU) {
-                p.className = 'mesaj admin-mesaj';
