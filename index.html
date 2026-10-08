@@ -1,112 +1,26 @@
-javascript
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.use(express.static(__dirname + '/public'));
-
-let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Yardım'];
-let aktifKullanicilar = {}; 
-let banliListesi = [];      
-
-io.on('connection', (socket) => {
-    socket.emit('oda listesi guncelle', acikOdalar);
-
-    socket.on('profil guncelle', (data) => {
-        if (banliListesi.includes(data.nick)) {
-            socket.emit('sistem cezasi', 'Yasaklandınız! Bu chat odasına girişiniz engellendi.');
-            socket.disconnect();
-            return;
-        }
-        let mevcutYetki = data.nick === 'Kral' ? 'Kurucu' : (aktifKullanicilar[socket.id]?.yetki || 'Kullanıcı');
-        aktifKullanicilar[socket.id] = { nick: data.nick, yetki: mevcutYetki };
-        io.emit('kullanici listesi guncelle', Object.values(aktifKullanicilar));
-    });
-
-    socket.on('odaya katil', (odaAdi) => {
-        Array.from(socket.rooms).forEach(room => {
-            if (room !== socket.id) socket.leave(room);
-        });
-        socket.join(odaAdi);
-    });
-
-    socket.on('yeni mesaj', (data) => {
-        const kullaniciVerisi = aktifKullanicilar[socket.id] || { yetki: 'Kullanıcı' };
-        io.to(data.oda).emit('mesaj al', {
-            kullanici: data.kullanici,
-            metin: data.metin,
-            yetki: kullaniciVerisi.yetki
-        });
-    });
-
-    socket.on('yeni oda olustur', (yeniOdaAdi) => {
-        const user = aktifKullanicilar[socket.id];
-        if (user && user.yetki === 'Kurucu' && !acikOdalar.includes(yeniOdaAdi)) {
-            acikOdalar.push(yeniOdaAdi);
-            io.emit('oda listesi guncelle', acikOdalar);
-        }
-    });
-
-    socket.on('yetki degistir', (data) => {
-        const talepEden = aktifKullanicilar[socket.id];
-        if (!talepEden || talepEden.yetki !== 'Kurucu') return;
-        const hedefSocketId = Object.keys(aktifKullanicilar).find(id => aktifKullanicilar[id].nick === data.hedefNick);
-        if (hedefSocketId && aktifKullanicilar[hedefSocketId].yetki !== 'Kurucu') {
-            aktifKullanicilar[hedefSocketId].yetki = data.yeniYetki;
-            io.emit('kullanici listesi guncelle', Object.values(aktifKullanicilar));
-            io.emit('sistem mesajı yayini', `⚙️ ${data.hedefNick} yetkisi [${data.yeniYetki}] yapıldı.`);
-        }
-    });
-
-    socket.on('kullanici banla', (hedefNick) => {
-        const talepEden = aktifKullanicilar[socket.id];
-        if (!talepEden || talepEden.yetki !== 'Kurucu' || hedefNick === 'Kral') return;
-        if (!banliListesi.includes(hedefNick)) banliListesi.push(hedefNick);
-        const hedefSocketId = Object.keys(aktifKullanicilar).find(id => aktifKullanicilar[id].nick === hedefNick);
-        if (hedefSocketId) {
-            io.to(hedefSocketId).emit('sistem cezasi', 'Kurucu tarafından banlandınız!');
-            io.sockets.sockets.get(hedefSocketId)?.disconnect();
-        }
-        io.emit('sistem mesajı yayini', `🚨 ${hedefNick} chattan kalıcı olarak banlandı!`);
-    });
-
-    socket.on('disconnect', () => {
-        if (aktifKullanicilar[socket.id]) {
-            delete aktifKullanicilar[socket.id];
-            io.emit('kullanici listesi guncelle', Object.values(aktifKullanicilar));
-        }
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Kral Chat http://localhost:${PORT} üzerinde aktif!`));
-Kodu dikkatli kullanın.
-2. public Klasörünü ve index.html Dosyasını Düzenleyin:
-	• Ana klasörün içine public isimli bir klasör oluşturun.
-	• public klasörünün içine girip index.html dosyasını oraya taşıyın/oluşturun.
-	• Ekranınızdaki o tek satırlık karmaşık kodların tamamını silin ve yerine sadece temiz olan şu HTML kodunu yapıştırın:
-html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat - Yönetim Paneli</title>
+    <title>Kral Chat</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; position: relative; }
-        .sol-panel { width: 200px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
-        .panel-baslik { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 15px; }
-        .oda-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        
+        /* Sol Panel - Odalar ve Canlı Kullanıcılar */
+        .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .sol-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; margin-bottom: 5px; }
+        .oda-listesi, .user-listesi { display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+        .oda-listesi { max-height: 180px; }
+        .user-listesi { flex-grow: 1; }
+        
         .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
         .oda-butonu.aktif { background-color: #10b981; color: white; font-weight: bold; }
-        .sag-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
-        .user-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-        .user-item { padding: 6px 10px; background: #2d2d2d; border-radius: 4px; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .user-item:hover { background: #3d3d3d; }
+        
+        .user-item { padding: 8px 12px; background: #2d2d2d; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .user-item:hover { background: #3d3d3d; border-color: #555; }
+        
+        /* Ana Panel */
         .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
         .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; }
         #aktif-oda { font-weight: bold; color: #10b981; }
@@ -114,188 +28,263 @@ html
         input[type="text"] { background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; padding: 10px 15px; border-radius: 6px; outline: none; }
         #admin-oda-alani { display: flex; gap: 10px; flex-grow: 2; }
         #oda-input { width: 100%; }
-        #username-input { flex-grow: 1; font-weight: bold; color: #ef4444; width: 80px; text-align: center; }
+        #username-input { flex-grow: 1; font-weight: bold; color: #ef4444; width: 100px; text-align: center; }
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        
         #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
         .mesaj { margin-bottom: 10px; font-size: 15px; padding: 4px 8px; border-radius: 4px; }
+        
+        /* Yetki Tasarımları */
         .admin-mesaj { background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; color: #fff; }
         .mod-mesaj { background-color: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; color: #fff; }
         .etiket { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; color: white; }
         .etiket-kurucu { background-color: #ef4444; }
         .etiket-mod { background-color: #10b981; }
-        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(255, 255, 255, 0.05); padding: 5px 10px; border-radius: 4px; display: block; margin-bottom: 8px; }
+        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; }
+        
         .mesaj-paneli { display: flex; gap: 10px; }
         #mesaj-input { flex-grow: 1; padding: 12px 15px; background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; border-radius: 6px; outline: none; }
         #gonder-btn { background-color: #2563eb; color: white; border: none; border-radius: 6px; padding: 0 20px; font-weight: bold; cursor: pointer; }
+
+        /* Pop-up Menü */
         #yonetim-menusu { position: absolute; background: #2d2d2d; border: 1px solid #454545; border-radius: 6px; display: none; flex-direction: column; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        #yonetim-menusu button { background: none; border: none; color: white; padding: 10px 15px; text-align: left; cursor: pointer; font-size: 13px; }
+        #yonetim-menusu button { background: none; border: none; color: white; padding: 10px 15px; text-align: left; cursor: pointer; font-size: 13px; width: 100%; box-sizing: border-box; }
         #yonetim-menusu button:hover { background: #404040; }
     </style>
 </head>
 <body>
 
+    <!-- SOL PANEL: Odalar ve Dinamik Kullanıcı Listesi -->
     <div class="sol-panel">
-        <h3 class="panel-baslik">💬 Odalar</h3>
-        <div id="oda-listesi-alanı" class="oda-listesi"></div>
+        <div>
+            <h3>💬 Sabit Odalar</h3>
+            <div id="oda-listesi-alanı" class="oda-listesi"></div>
+        </div>
+        
+        <div style="flex-grow: 1; display: flex; flex-direction: column;">
+            <h3>👥 Kimler Var (<span id="aktif-sayi">1</span>)</h3>
+            <div id="user-listesi-alani" class="user-listesi"></div>
+        </div>
     </div>
 
+    <!-- ANA PANEL: Sohbet Alanı -->
     <div class="ana-panel">
-        <div class="durum-bilgisi">Şu anki Oda: <span id="aktif-oda">Genel</span></div>
+        <div class="durum-bilgisi">
+            Şu anki Oda: <span id="aktif-oda">Genel</span>
+        </div>
+
         <div class="kontrol-paneli">
-            <input type="text" id="username-input" value="Kral" oninput="profilGuncelle()">
+            <!-- input her değiştiğinde listeyi ve yetkileri canlı günceller -->
+            <input type="text" id="username-input" value="Kral" oninput="kullaniciGuncelle()">
             <div id="admin-oda-alani">
-                <input type="text" id="oda-input" placeholder="Yeni oda adı...">
+                <input type="text" id="oda-input" placeholder="Yeni oda adı yazın...">
                 <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
             </div>
         </div>
+
         <div id="chat-penceresi"></div>
+
         <div class="mesaj-paneli">
-            <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın...">
+            <input type="text" id="mesaj-input" placeholder="Mesajınızı buraya yazın...">
             <button id="gonder-btn" onclick="mesajGonder()">Gönder</button>
         </div>
     </div>
 
-    <div class="sag-panel">
-        <h3 class="panel-baslik">👥 Aktif Üyeler (<span id="uye-sayisi">0</span>)</h3>
-        <div id="user-listesi-alani" class="user-listesi"></div>
-    </div>
-
+    <!-- Yönetim Aksiyonları Pop-up Menüsü -->
     <div id="yonetim-menusu">
         <button onclick="yetkiVer('Moderatör')">🟢 Moderatör Yap</button>
-        <button onclick="yetkiVer('Kullanıcı')">⚪ Yetki Al</button>
-        <button onclick="banla()" style="color: #ef4444; font-weight: bold; border-top: 1px solid #444;">❌ Odadan Uçur (BAN)</button>
+        <button onclick="yetkiVer('Kullanıcı')">⚪ Yetkiyi Geri Al</button>
+        <button onclick="banla()" style="color: #ef4444; font-weight: bold; border-top: 1px solid #444;">❌ Siteden Uçur (BAN)</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
         let mevcutOda = 'Genel';
-        let secilenKullanici = ''; 
-        const ADMIN_RUMUZU = "Kral";
+        let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Yardım']; 
+        const ADMIN_RUMUZU = "Kral"; 
+        
+        // Sitede kayıtlı kullanıcı verileri ve yetkileri (Siz ve test botları)
+        let kullanicilar = [
+            { nick: "Kral", yetki: "Kurucu" },
+            { nick: "Ahmet", yetki: "Kullanıcı" },
+            { nick: "Ayşe", yetki: "Kullanıcı" }
+        ];
+        
+        let secilenKullaniciNick = "";
+        let banliKullanicilar = [];
+        let eskiNick = "Kral"; // Nick değişim takibi için
 
-        profilGuncelle();
-        socket.emit('odaya katil', mevcutOda);
+        // Başlangıç Kurulumları
+        odaListesiniGuncelle();
+        kullaniciListesiniGuncelle();
+        sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
 
-        function profilGuncelle() {
+        // KULLANICI ADI DEĞİŞİNCE LİSTEYİ ANINDA GÜNCELLEYEN KRİTİK FONKSİYON
+        function kullaniciGuncelle() {
             const input = document.getElementById('username-input');
-            const nick = input ? input.value.trim() : 'Misafir';
-            if (nick === ADMIN_RUMUZU) {
+            let yeniNick = input ? input.value.trim() : 'Misafir';
+            if(yeniNick === "") yeniNick = "Misafir";
+
+            // Listede eski nickimizi bulup yenisiyle değiştiriyoruz
+            let ben = kullanicilar.find(u => u.nick === eskiNick);
+            if (ben) {
+                ben.nick = yeniNick;
+                // Eğer yeni adı Kral yaptıysa otomatik Kurucu, yapmadıysa normal üye olur
+                ben.yetki = (yeniNick === ADMIN_RUMUZU) ? "Kurucu" : "Kullanıcı";
+            }
+
+            // Arayüz renklerini ve oda açma alanını gizle/göster yapıyoruz
+            const adminOdaAlani = document.getElementById('admin-oda-alani');
+            if (yeniNick === ADMIN_RUMUZU) {
                 input.style.color = "#ef4444";
-                document.getElementById('admin-oda-alani').style.display = "flex";
+                if(adminOdaAlani) adminOdaAlani.style.display = "flex";
             } else {
                 input.style.color = "#34d399";
-                document.getElementById('admin-oda-alani').style.display = "none";
+                if(adminOdaAlani) adminOdaAlani.style.display = "none";
             }
-            socket.emit('profil guncelle', { nick: nick });
+
+            eskiNick = yeniNick; // Bir sonraki değişim için hafızaya al
+            kullaniciListesiniGuncelle(); // Sol paneli anlık yenile
+        }
+
+        // SOL PANELİ CANLI VE ROZETLİ OLARAK BASAN FONKSİYON
+        function kullaniciListesiniGuncelle() {
+            const listeAlani = document.getElementById('user-listesi-alani');
+            const aktifSayiAlani = document.getElementById('aktif-sayi');
+            if (!listeAlani) return;
+            
+            listeAlani.innerHTML = '';
+            aktifSayiAlani.innerText = kullanicilar.length;
+
+            kullanicilar.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                
+                let rozet = '';
+                if (user.yetki === 'Kurucu') rozet = '<span class="etiket etiket-kurucu">Kral</span>';
+                if (user.yetki === 'Moderatör') rozet = '<span class="etiket etiket-mod">Mod</span>';
+                
+                div.innerHTML = `<span>${user.nick}</span> ${rozet}`;
+                
+                // Tıklama Yönetimi (Sadece aktif rumuz "Kral" ise ve kendimize tıklamıyorsak menü açılır)
+                div.onclick = function(e) {
+                    const gecerliNick = document.getElementById('username-input').value.trim();
+                    if (gecerliNick === ADMIN_RUMUZU && user.nick !== ADMIN_RUMUZU) {
+                        e.stopPropagation();
+                        secilenKullaniciNick = user.nick;
+                        menuyuGoster(e.clientX, e.clientY);
+                    }
+                };
+                
+                listeAlani.appendChild(div);
+            });
         }
 
         function odayaKatil(odaAdi) {
             mevcutOda = odaAdi;
             document.getElementById('aktif-oda').innerText = mevcutOda;
             document.getElementById('chat-penceresi').innerHTML = '';
-            socket.emit('odaya katil', mevcutOda);
-            sistemMesajiEkle(`"${mevcutOda}" odasına geçiş yaptınız.`);
-        }
-
-        function mesajGonder() {
-            const input = document.getElementById('mesaj-input');
-            const username = document.getElementById('username-input').value.trim() || 'Misafir';
-            if (!input || input.value.trim() === '') return;
-
-            socket.emit('yeni mesaj', { oda: mevcutOda, kullanici: username, metin: input.value.trim() });
-            input.value = '';
-            input.focus();
-        }
-
-        function odaOlustur() {
-            const odaInput = document.getElementById('oda-input');
-            if (odaInput && odaInput.value.trim() !== '') {
-                let yeniOdaAdi = '#' + odaInput.value.trim().replace('#', '');
-                socket.emit('yeni oda olustur', yeniOdaAdi);
-                odaInput.value = '';
-                setTimeout(() => odayaKatil(yeniOdaAdi), 100);
-            }
-        }
-
-        socket.on('oda listesi guncelle', (acikOdalar) => {
-            const listeAlani = document.getElementById('oda-listesi-alanı');
-            if (!listeAlani) return;
-            listeAlani.innerHTML = '';
-            acikOdalar.forEach(oda => {
-                const btn = document.createElement('button');
-                btn.className = `oda-butonu ${oda === mevcutOda ? 'aktif' : ''}`;
-                btn.innerText = oda;
-                btn.onclick = () => odayaKatil(oda);
-                listeAlani.appendChild(btn);
-            });
-        });
-
-        socket.on('kullanici listesi guncelle', (kullanicilar) => {
-            document.getElementById('uye-sayisi').innerText = kullanicilar.length;
-            const listeAlani = document.getElementById('user-listesi-alani');
-            listeAlani.innerHTML = '';
-
-            kullanicilar.forEach(user => {
-                const div = document.createElement('div');
-                div.className = 'user-item';
-                let yetkiRozeti = '';
-                if(user.yetki === 'Kurucu') yetkiRozeti = `<span class="etiket etiket-kurucu">Kral</span>`;
-                if(user.yetki === 'Moderatör') yetkiRozeti = `<span class="etiket etiket-mod">Mod</span>`;
-
-                div.innerHTML = `<span>${user.nick}</span> ${yetkiRozeti}`;
-                
-                div.onclick = (e) => {
-                    const mevcutKullanici = document.getElementById('username-input').value.trim();
-                    if (mevcutKullanici === ADMIN_RUMUZU && user.nick !== ADMIN_RUMUZU) {
-                        e.stopPropagation();
-                        secilenKullanici = user.nick;
-                        acilirMenuyuGoster(e.clientX, e.clientY);
-                    }
-                };
-                listeAlani.appendChild(div);
-            });
-        });
-
-        socket.on('mesaj al', (data) => {
-            const p = document.createElement('div');
-            p.className = 'mesaj';
-            if (data.yetki === 'Kurucu') {
-                p.className += ' admin-mesaj';
-                p.innerHTML = `<span class="etiket etiket-kurucu">Kurucu</span><strong>[${data.kullanici}]:</strong> ${data.metin}`;
-            } else if (data.yetki === 'Moderatör') {
-                p.className += ' mod-mesaj';
 Kodu dikkatli kullanın.
-p.innerHTML = <span class="etiket etiket-mod">Mod</span><strong>[${data.kullanici}]:</strong> ${data.metin};
+sistemMesajiEkle("${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.);
+odaListesiniGuncelle();
+}
+function mesajGonder() {
+const input = document.getElementById('mesaj-input');
+const username = document.getElementById('username-input').value.trim() || 'Misafir';
+if (!input || input.value.trim() === '') return;
+if (banliKullanicilar.includes(username)) {
+alert("Yasaklandınız! Bu odada mesaj yazamazsiniz.");
+return;
+}
+let benimYetkim = "Kullanıcı";
+let userOnList = kullanicilar.find(u => u.nick === username);
+if (userOnList) benimYetkim = userOnList.yetki;
+mesajEkle(username, input.value, benimYetkim);
+input.value = '';
+input.focus();
+}
+function odaOlustur() {
+const usernameInput = document.getElementById('username-input').value.trim();
+if (usernameInput !== ADMIN_RUMUZU) {
+alert("Oda kurma yetkisi sadece Kurucuya aittir!");
+return;
+}
+const odaInput = document.getElementById('oda-input');
+if (odaInput && odaInput.value.trim() !== '') {
+let yeniOdaAdi = '#' + odaInput.value.trim().replace('#', '');
+if (!acikOdalar.includes(yeniOdaAdi)) acikOdalar.push(yeniOdaAdi);
+odayaKatil(yeniOdaAdi);
+odaInput.value = '';
+}
+}
+function odaListesiniGuncelle() {
+const listeAlani = document.getElementById('oda-listesi-alanı');
+if (!listeAlani) return;
+listeAlani.innerHTML = '';
+acikOdalar.forEach(oda => {
+const btn = document.createElement('button');
+btn.className = oda-butonu ${oda === mevcutOda ? 'aktif' : ''};
+btn.innerText = oda;
+btn.onclick = function() { odayaKatil(oda); };
+listeAlani.appendChild(btn);
+});
+}
+function mesajEkle(kullanici, metin, yetki) {
+const p = document.createElement('div');
+if (yetki === "Kurucu" || kullanici === ADMIN_RUMUZU) {
+p.className = 'mesaj admin-mesaj';
+p.innerHTML = <span class="text-xs etiket etiket-kurucu">Kurucu</span><strong>[${kullanici}]:</strong> ${metin};
+} else if (yetki === "Moderatör") {
+p.className = 'mesaj mod-mesaj';
+p.innerHTML = <span class="etiket etiket-mod">Mod</span><strong>[${kullanici}]:</strong> ${metin};
 } else {
-p.innerHTML = <strong>[${data.kullanici}]:</strong> ${data.metin};
+p.className = 'mesaj';
+p.innerHTML = <strong>[${kullanici}]:</strong> ${metin};
 }
 const pencere = document.getElementById('chat-penceresi');
+if(pencere) {
 pencere.appendChild(p);
 pencere.scrollTop = pencere.scrollHeight;
-});
-socket.on('sistem mesajı yayini', (metin) => { sistemMesajiEkle(metin); });
-socket.on('sistem cezasi', (mesaj) => { alert(mesaj); window.location.reload(); });
-function acilirMenuyuGoster(x, y) {
+}
+}
+function sistemMesajiEkle(metin) {
+const p = document.createElement('div');
+p.className = 'mesaj';
+p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
+const pencere = document.getElementById('chat-penceresi');
+if(pencere) {
+pencere.appendChild(p);
+pencere.scrollTop = pencere.scrollHeight;
+}
+}
+// --- POP-UP YÖNETİM MENÜSÜ ---
+function menuyuGoster(x, y) {
 const menu = document.getElementById('yonetim-menusu');
-menu.style.display = 'flex';
-menu.style.left = ${x - 10}px;
-menu.style.top = ${y + 10}px;
+menu.style.display = "flex";
+menu.style.left = ${x}px;
+menu.style.top = ${y}px;
+}
+function menuyuKapat() {
+document.getElementById('yonetim-menusu').style.display = "none";
 }
 function yetkiVer(yeniYetki) {
-socket.emit('yetki degistir', { hedefNick: secilenKullanici, yeniYetki: yeniYetki });
+let user = kullanicilar.find(u => u.nick === secilenKullaniciNick);
+if (user) {
+user.yetki = yeniYetki;
+sistemMesajiEkle(⚙️ ${secilenKullaniciNick} yeni yetkisi: [${yeniYetki}]);
+kullaniciListesiniGuncelle();
+}
 menuyuKapat();
 }
 function banla() {
-if(confirm(${secilenKullanici} banlansın mı?)) {
-socket.emit('kullanici banla', secilenKullanici);
+if (confirm(${secilenKullaniciNick} chattan uçurulsun mu?)) {
+banliKullanicilar.push(secilenKullaniciNick);
+kullanicilar = kullanicilar.filter(u => u.nick !== secilenKullaniciNick);
+sistemMesajiEkle(🚨 ${secilenKullaniciNick} kurucu tarafından uçuruldu!);
+kullaniciListesiniGuncelle();
 }
 menuyuKapat();
 }
-function menuyuKapat() { document.getElementById('yonetim-menusu').style.display = 'none'; }
-function sistemMesajiEkle(metin) {
-const p = document.createElement('div');
-p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
-document.getElementById('chat-penceresi').appendChild(p);
-}
 document.addEventListener('click', menuyuKapat);
-document.getElementById('mesaj-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') mesajGonder(); });
+document.getElementById('mesaj-input').addEventListener('keypress', function(e) {
+if (e.key === 'Enter') mesajGonder();
+});
