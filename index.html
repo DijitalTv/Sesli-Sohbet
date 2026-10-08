@@ -3,195 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat</title>
+    <title>Kral Chat - Türkiye'nin En Kaliteli Sohbet Sitesi</title>
     <style>
-        body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
+        body { font-family: sans-serif; background: #0f0f12; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; justify-content: center; align-items: center; }
         
-        /* Sol Panel - Sabit Odalar */
-        .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
+        /* 🔐 1. SAYFA: GİRİŞ VE KAYIT EKRANI TASARIMI */
+        #giris-sayfasi { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+        .giris-kutusu { background: rgba(30, 30, 40, 0.9); padding: 35px; border-radius: 12px; border: 1px solid #10b981; width: 360px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.7); backdrop-filter: blur(10px); }
+        
+        .logo-alani { margin-bottom: 25px; }
+        .kral-logo { font-size: 32px; font-weight: bold; color: #fbbf24; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.6); margin: 0; }
+        .slogan-yazisi { font-size: 13px; color: #f87171; font-weight: bold; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 8px rgba(248, 113, 113, 0.4); }
+        
+        .giris-input { width: 100%; background-color: #13131a; border: 1px solid #4b5563; color: #fff; padding: 12px 15px; margin-bottom: 15px; border-radius: 8px; outline: none; box-sizing: border-box; font-size: 14px; }
+        .giris-input:focus { border-color: #10b981; }
+        
+        .buton-grubu { display: flex; flex-direction: column; gap: 10px; }
+        .giris-btn { width: 100%; color: white; border: none; padding: 13px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; box-sizing: border-box; }
+        .btn-yesil { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .btn-mavi { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 0 10px rgba(37, 99, 235, 0.3); }
+        
+        .alt-link { color: #9ca3af; font-size: 13px; margin-top: 20px; cursor: pointer; text-decoration: underline; display: inline-block; }
+        .giris-uyari { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; font-weight: bold; }
+
+        /* 💬 2. SAYFA: BAĞIMSIZ SOHBET SAYFASI TASARIMI (İlk girişte tamamen yok sayılır) */
+        #sohbet-sayfasi { display: none; width: 100%; height: 100%; gap: 20px; box-sizing: border-box; align-items: stretch; justify-content: flex-start; }
+        
+        .sol-panel { width: 220px; background-color: #1e1e24; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
         .sol-panel h3, .sag-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
         .oda-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-        .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
-        .oda-butonu.aktif { background-color: #10b981; color: white; font-weight: bold; }
+        .oda-butonu { background-color: #2d2d35; color: #e0e0e0; padding: 10px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
+        .oda-butonu.aktif { background-color: #10b981; color: white; font-weight: bold; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
         
-        /* Sağ Panel - Aktif Kullanıcılar (JavaScript'ten Bağımsız) */
-        .sag-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
+        .sag-panel { width: 220px; background-color: #1e1e24; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
         .user-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-        .user-item { background-color: #2d2d2d; color: #e0e0e0; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: 1px solid #404040; font-weight: bold; }
+        .user-item { background-color: #2d2d35; color: #e0e0e0; padding: 10px 12px; border-radius: 6px; font-size: 14px; border: 1px solid #404040; font-weight: bold; }
         
-        /* Ana Panel - Sohbet Alanı */
-        .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
-        .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; }
+        .ana-panel { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        .durum-bilgisi { background-color: #1e1e24; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; border-top: 1px solid #333; border-right: 1px solid #333; border-bottom: 1px solid #333; }
         #aktif-oda { font-weight: bold; color: #10b981; }
         .kontrol-paneli { display: flex; gap: 10px; margin-bottom: 15px; }
-        input[type="text"] { background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; padding: 10px 15px; border-radius: 6px; outline: none; }
-        #admin-oda-alani { display: flex; gap: 10px; flex-grow: 2; }
-        #oda-input { width: 100%; }
-        #username-input { flex-grow: 1; font-weight: bold; color: #ef4444; width: 80px; text-align: center; }
+        .kontrol-paneli span { background-color: #1e1e24; border: 1px solid #333; color: #ffffff; padding: 10px 15px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        #admin-oda-alani { display: none; gap: 10px; flex-grow: 2; }
+        #oda-input { width: 100%; background-color: #1e1e24; border: 1px solid #333; color: #ffffff; padding: 10px 15px; border-radius: 6px; outline: none; }
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         
-        #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
+        #chat-penceresi { flex-grow: 1; background-color: #141419; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; min-height: 200px; }
         .mesaj { margin-bottom: 10px; font-size: 15px; }
         .mesaj strong { color: #34d399; margin-right: 5px; }
-        .admin-mesaj { background-color: rgba(239, 68, 68, 0.1); padding: 6px 12px; border-radius: 6px; border-left: 3px solid #ef4444; color: #fff; }
-        .admin-etiket { background-color: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; }
-        .admin-isim { color: #fca5a5 !important; }
-        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; }
+        .admin-mesaj { background-color: rgba(239, 68, 68, 0.08); padding: 8px 12px; border-radius: 6px; border-left: 3px solid #ef4444; color: #fff; border-top: 1px solid rgba(239, 68, 68, 0.1); }
+        .admin-etiket { background-color: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.08); padding: 6px 12px; border-radius: 4px; display: inline-block; border-left: 3px solid #10b981; }
         
-        .mesaj-paneli { display: flex; gap: 10px; }
-        #mesaj-input { flex-grow: 1; padding: 12px 15px; background-color: #2d2d2d; border: 1px solid #404040; color: #ffffff; border-radius: 6px; outline: none; }
-        #gonder-btn { background-color: #2563eb; color: white; border: none; border-radius: 6px; padding: 0 20px; font-weight: bold; cursor: pointer; }
+        .mesaj-paneli { display: flex; gap: 10px; position: relative; }
+        #mesaj-input { flex-grow: 1; padding: 12px 15px; background-color: #1e1e24; border: 1px solid #333; color: #ffffff; border-radius: 6px; outline: none; }
+        #gonder-btn { background-color: #2563eb; color: white; border: none; border-radius: 6px; padding: 0 25px; font-weight: bold; cursor: pointer; }
+        
+        /* Pop-up Emoji Listesi */
+        .emoji-kapsayici { position: relative; display: flex; }
+        .emoji-tetikleyici-btn { background-color: #2d2d35; border: 1px solid #333; color: white; border-radius: 6px; padding: 0 15px; font-size: 20px; cursor: pointer; }
+        .emoji-kapsayici:hover .emoji-penceresi { display: grid; }
+        .emoji-penceresi { position: absolute; bottom: 50px; right: 0; background-color: #1e1e24; border: 1px solid #444; border-radius: 8px; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); z-index: 9999; width: 180px; }
+        .emoji-item { font-size: 20px; cursor: pointer; text-align: center; padding: 4px; border-radius: 4px; user-select: none; }
+        .emoji-item:hover { background-color: #2d2d35; }
     </style>
 </head>
 <body>
 
-    <!-- SOL PANEL: Odalar -->
-    <div class="sol-panel">
-        <h3>💬 Sabit Odalar</h3>
-        <div id="oda-listesi-alanı" class="oda-listesi"></div>
-    </div>
-
-    <!-- ANA PANEL: Genişletilmiş Sohbet Alanı -->
-    <div class="ana-panel">
-        <div class="durum-bilgisi">
-            Şu anki Oda: <span id="aktif-oda">Genel</span>
-        </div>
-
-        <div class="kontrol-paneli">
-            <input type="text" id="username-input" value="Kral" oninput="adminKontrolü()">
-            <div id="admin-oda-alani">
-                <input type="text" id="oda-input" placeholder="Yeni oda adı yazın...">
-                <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
+    <!-- 🔐 1. SAYFA: LOGOLU SOHBET GİRİŞ PANELİ -->
+    <div id="giris-sayfasi">
+        <!-- Giriş Kutusu -->
+        <div class="giris-kutusu" id="panel-giris">
+            <div class="logo-alani">
+                <h1 class="kral-logo">👑 KRAL CHAT</h1>
+                <div class="slogan-yazisi">Türkiye'nin En Kaliteli Sohbet Sitesine Hoş Geldiniz</div>
             </div>
+            <input type="text" id="giris-nick" class="giris-input" placeholder="Kullanıcı Adınız..." autocomplete="off">
+            <input type="password" id="giris-sifre" class="giris-input" placeholder="Şifreniz (Kayıtlı Üyeler İçin)...">
+            <div class="buton-grubu">
+                <button class="giris-btn btn-yesil" id="btn-hesap-giris">Üye Girişi Yap</button>
+                <button class="giris-btn btn-mavi" id="btn-misafir-giris">Şifresiz Misafir Girişi</button>
+            </div>
+            <div id="giris-hata-mesaji" class="giris-uyari">Hatalı Şifre veya Kullanıcı Adı!</div>
+            <div class="alt-link" id="link-kayit-ekranina-gec">Henüz üye değil misiniz? Kayıt Ol</div>
         </div>
 
-        <div id="chat-penceresi"></div>
-
-        <div class="mesaj-paneli">
-            <input type="text" id="mesaj-input" placeholder="Mesajınızı buraya yazın...">
-            <button id="gonder-btn" onclick="mesajGonder()">Gönder</button>
+        <!-- Kayıt Kutusu -->
+        <div class="giris-kutusu" id="panel-kayit" style="display: none;">
+            <div class="logo-alani">
+                <h1 class="kral-logo">👑 KRAL CHAT</h1>
+                <div class="slogan-yazisi">Hızlıca Kaydol ve Sohbetin Tadını Çıkar</div>
+            </div>
+            <input type="text" id="kayit-nick" class="giris-input" placeholder="Yeni Kullanıcı Adı Belirleyin..." autocomplete="off">
+            <input type="password" id="kayit-sifre" class="giris-input" placeholder="Yeni Şifre Belirleyin...">
+            <button class="giris-btn btn-mavi" id="btn-kayit-ol">Hesap Oluştur ve Kaydet</button>
+            <div class="alt-link" id="link-giris-ekranina-gec">Zaten üye misiniz? Giriş Yap</div>
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Giriş Yapanlar (Sabit HTML Alanı - Kilitlenme Yapmaz) -->
-    <div class="sag-panel">
-        <h3>👥 Kimler Var</h3>
-        <div class="user-listesi">
-            <div class="user-item" style="color: #ef4444;"><span class="admin-etiket">Kurucu</span>Kral</div>
-            <div class="user-item" style="color: #34d399;">Sivas</div>
-            <div class="user-item">Ahmet</div>
-            <div class="user-item">Ayşe</div>
+    <!-- 💬 2. SAYFA: ASIL CANLI SOHBET ODASI SAYFASI (Yönlendirme ile açılır) -->
+    <div id="sohbet-sayfasi">
+        <!-- Sol Panel - Odalar -->
+        <div class="sol-panel">
+            <h3>💬 Sabit Odalar</h3>
+            <div id="oda-listesi-alanı" class="oda-listesi"></div>
         </div>
-    </div>
 
-    <script>
-        let mevcutOda = 'Genel';
-        // Genel, #Sohbet, #Oyun ve sabit #Destek odaları eklendi
-        let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Destek']; 
-        const ADMIN_RUMUZU = "Kral"; 
+        <!-- Ana Sohbet Alanı -->
+        <div class="ana-panel">
+            <div class="durum-bilgisi">Şu anki Oda: <span id="aktif-oda">Genel</span></div>
 
-        // Orijinal ilk çalışan fonksiyonlarınız
-        odaListesiniGuncelle();
-        adminKontrolü();
-        sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
+            <div class="kontrol-paneli">
+                <span id="aktif-kullanici-adi">Rumuz</span>
+                <div id="admin-oda-alani">
+                    <input type="text" id="oda-input" placeholder="Yeni oda adı yazın...">
+                    <button class="ana-btn" id="oda-ac-btn">Oda Aç</button>
+                </div>
+            </div>
 
-        function odayaKatil(odaAdi) {
-            mevcutOda = odaAdi;
-            document.getElementById('aktif-oda').innerText = mevcutOda;
-            document.getElementById('chat-penceresi').innerHTML = '';
-            
-            sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
-            odaListesiniGuncelle();
-        }
+            <div id="chat-penceresi"></div>
 
-        // BİREBİR İLK SAĞLAM MESAJ GÖNDERME MANTIĞINIZ (HİÇBİR DIŞ BAĞI YOKTUR)
-        function mesajGonder() {
-            const input = document.getElementById('mesaj-input');
-            const usernameInput = document.getElementById('username-input');
-            const username = usernameInput ? usernameInput.value.trim() : 'Misafir';
-            
-            if (!input || input.value.trim() === '') return;
-
-            mesajEkle(username, input.value);
-            input.value = '';
-            input.focus();
-        }
-
-        // BİREBİR İLK SAĞLAM ODA AÇMA MANTIĞINIZ (HİÇBİR DIŞ BAĞI YOKTUR)
-        function odaOlustur() {
-            const usernameInput = document.getElementById('username-input').value.trim();
-            if (usernameInput !== ADMIN_RUMUZU) {
-                alert("Oda kurma yetkisi sadece Kurucuya aittir!");
-                return;
-            }
-            const odaInput = document.getElementById('oda-input');
-            if (odaInput && odaInput.value.trim() !== '') {
-                let yeniOdaAdi = '#' + odaInput.value.trim().replace('#', '');
-                if (!acikOdalar.includes(yeniOdaAdi)) { 
-                    acikOdalar.push(yeniOdaAdi); 
-                }
-                odayaKatil(yeniOdaAdi);
-                odaInput.value = '';
-            }
-        }
-
-        function odaListesiniGuncelle() {
-            const listeAlani = document.getElementById('oda-listesi-alanı');
-            if (!listeAlani) return;
-            listeAlani.innerHTML = '';
-            acikOdalar.forEach(oda => {
-                const btn = document.createElement('button');
-                btn.className = 'oda-butonu';
-                if(oda === mevcutOda) btn.className += ' aktif';
-                btn.innerText = oda;
-                btn.onclick = function() { odayaKatil(oda); };
-                listeAlani.appendChild(btn);
-            });
-        }
-
-        function adminKontrolü() {
-            const usernameInput = document.getElementById('username-input');
-            const adminOdaAlani = document.getElementById('admin-oda-alani');
-            if (usernameInput && usernameInput.value.trim() === ADMIN_RUMUZU) {
-                usernameInput.style.color = "#ef4444";
-                if(adminOdaAlani) adminOdaAlani.style.display = "flex";
-            } else {
-                if(usernameInput) usernameInput.style.color = "#34d399";
-                if(adminOdaAlani) adminOdaAlani.style.display = "none";
-            }
-        }
-
-        function mesajEkle(kullanici, metin) {
-            const p = document.createElement('div');
-            if (kullanici === ADMIN_RUMUZU) {
-                p.className = 'mesaj admin-mesaj';
-                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${kullanici}]:</strong> ${metin}`;
-            } else {
-                p.className = 'mesaj';
-                p.innerHTML = `<strong>[${kullanici}]:</strong> ${metin}`;
-            }
-            const pencere = document.getElementById('chat-penceresi');
-            if(pencere) {
-                pencere.appendChild(p);
-                pencere.scrollTop = pencere.scrollHeight;
-            }
-        }
-
-        function sistemMesajiEkle(metin) {
-            const p = document.createElement('div');
-            p.className = 'mesaj';
-            p.innerHTML = `<span class="sistem-mesaji">⚙️ ${metin}</span>`;
-            const pencere = document.getElementById('chat-penceresi');
-            if(pencere) {
-                pencere.appendChild(p);
-                pencere.scrollTop = pencere.scrollHeight;
-            }
-        }
-
-        // Enter tuşu dinleyicisi
-        document.getElementById('mesaj-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') mesajGonder();
-        });
-    </script>
-</body>
-</html>
+            <div class="mesaj-paneli">
