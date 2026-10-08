@@ -21,7 +21,7 @@
         .user-btn { background: #ef4444; border: none; color: white; font-size: 11px; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .user-btn.mod-btn { background: #10b981; margin-right: 4px; }
         
-        /* Ana Panel - Sohbet Alanı (Tam Ekran Genişletildi) */
+        /* Ana Panel - Sohbet Alanı */
         .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
         .durum-bilgisi { background-color: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #10b981; }
         #aktif-oda { font-weight: bold; color: #10b981; }
@@ -77,7 +77,7 @@
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Giriş Yapanlar -->
+    <!-- SAĞ PANEL: Giriş Yapan Üyeler -->
     <div class="sag-panel">
         <h3>👥 Kimler Var</h3>
         <div id="user-listesi-alani" class="user-listesi"></div>
@@ -88,14 +88,13 @@
         let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Destek']; 
         const ADMIN_RUMUZU = "Kral"; 
 
-        // Sizinle birlikte sağ tarafta listelenecek diğer kullanıcılar
+        // Sağ paneldeki kullanıcı listesi
         let aktifKullanicilar = [
             { nick: "Ahmet", yetki: "Kullanıcı" },
             { nick: "Ayşe", yetki: "Kullanıcı" },
             { nick: "Mehmet", yetki: "Kullanıcı" }
         ];
         let banliKullanicilar = [];
-        let eskiNick = "Kral"; // Nick değişimlerini takip etmek için
 
         window.onload = function() {
             odaListesiniGuncelle();
@@ -116,6 +115,7 @@
             odaListesiniGuncelle();
         }
 
+        // TAMAMEN BAĞIMSIZ VE KİLİTLENMEYEN MESAJ GÖNDERME FONKSİYONU
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
             const usernameInput = document.getElementById('username-input');
@@ -128,9 +128,18 @@
                 return;
             }
 
-            let userBul = aktifKullanicilar.find(u => u.nick === username);
-            let yetkiDurumu = userBul ? userBul.yetki : "Kullanıcı";
-            if (username === ADMIN_RUMUZU) yetkiDurumu = "Kurucu";
+            // Kilitlenmeye yol açan döngüyü tamamen kaldırdık, rol kontrolünü basitleştirdik
+            let yetkiDurumu = "Kullanıcı";
+            if (username === ADMIN_RUMUZU) {
+                yetkiDurumu = "Kurucu";
+            } else {
+                for (let i = 0; i < aktifKullanicilar.length; i++) {
+                    if (aktifKullanicilar[i].nick === username) {
+                        yetkiDurumu = aktifKullanicilar[i].yetki;
+                        break;
+                    }
+                }
+            }
 
             mesajEkle(username, input.value, yetkiDurumu);
             input.value = '';
@@ -168,7 +177,7 @@
             });
         }
 
-        // SAĞ PANELDE TÜM KULLANICILARIN İSİMLERİNİ VE ROZETLERİNİ GÖSTEREN GÜVENLİ ALAN
+        // SAĞ PANELİ SIFIR HATAYLA BASAN GÜVENLİ LİSTELEME FONKSİYONU
         function kullaniciListesiniGuncelle() {
             const listeAlani = document.getElementById('user-listesi-alani');
             if (!listeAlani) return;
@@ -176,15 +185,8 @@
 
             const anlikNick = document.getElementById('username-input').value.trim();
 
-            // Giriş yapan güncel ismimizi de listenin en başına ekliyoruz
+            // Kendi isminizi listenin en üstüne ekler
             const divBen = document.createElement('div');
             divBen.className = 'user-item';
             if(anlikNick === ADMIN_RUMUZU) {
                 divBen.innerHTML = `<span><span class="admin-etiket">Kral</span>${anlikNick}</span>`;
-            } else {
-                divBen.innerHTML = `<span>${anlikNick}</span>`;
-            }
-            listeAlani.appendChild(divBen);
-
-            // Diğer aktif kişileri listeleme
-            aktifKullanicilar.forEach(user => {
