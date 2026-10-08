@@ -4,7 +4,7 @@ html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kral Chat</title>
+    <title>Kral Chat | Canlı Sohbet Odaları</title>
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
@@ -41,7 +41,7 @@ html
 <body>
 
     <div class="sol-panel">
-        <h3>💬 Aktif Odalar</h3>
+        <h3>💬 Sabit Odalar</h3>
         <div id="oda-listesi-alanı" class="oda-listesi"></div>
     </div>
 
@@ -53,7 +53,7 @@ html
         <div class="kontrol-paneli">
             <input type="text" id="username-input" value="Kral" oninput="adminKontrolü()">
             <div id="admin-oda-alani">
-                <input type="text" id="oda-input" placeholder="Yeni sabit oda adı yazın...">
+                <input type="text" id="oda-input" placeholder="Yeni oda adı yazın (Sadece Admin)...">
                 <button class="ana-btn" onclick="odaOlustur()">Oda Aç</button>
             </div>
         </div>
@@ -61,7 +61,7 @@ html
         <div id="chat-penceresi"></div>
 
         <div class="mesaj-paneli">
-            <input type="text" id="mesaj-input" placeholder="Mesajınızı yazın ve Enter'a basın..." autocomplete="off">
+            <input type="text" id="mesaj-input" placeholder="Mesajınızı buraya yazın..." autocomplete="off">
             <button id="gonder-btn" onclick="mesajGonder()">Gönder</button>
         </div>
     </div>
@@ -180,34 +180,4 @@ html
             const p = document.createElement('div');
             if (kullanici === ADMIN_RUMUZU) {
                 p.className = 'mesaj admin-mesaj';
-                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong class="admin-isim">[${kullanici}]:</strong> ${metin}`;
-            } else {
-Kodu dikkatli kullanın.
-p.className = 'mesaj';
-p.innerHTML = <strong>[${kullanici}]:</strong> ${metin};
-}
-const pencere = document.getElementById('chat-penceresi');
-if(pencere) {
-pencere.appendChild(p);
-pencere.scrollTop = pencere.scrollHeight;
-}
-}
-function sistemMesajiEkle(metin) {
-const p = document.createElement('div');
-p.className = 'mesaj';
-p.innerHTML = <span class="sistem-mesaji">⚙️ ${metin}</span>;
-const pencere = document.getElementById('chat-penceresi');
-if(pencere) pencere.appendChild(p);
-}
-window.addEventListener('DOMContentLoaded', () => {
-const mesajInput = document.getElementById('mesaj-input');
-if(mesajInput) {
-mesajInput.addEventListener('keypress', function(e) {
-if (e.key === 'Enter') { mesajGonder(); e.preventDefault(); }
-});
-}
-const gonderBtn = document.getElementById('gonder-btn');
-if(gonderBtn) { gonderBtn.onclick = mesajGonder; }
-odayaKatil('Genel');
-adminKontrolü();
-});
+                p.innerHTML = `<span class="admin-etiket">Kurucu</span><strong cl
