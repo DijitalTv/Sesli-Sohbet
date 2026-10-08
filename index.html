@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -7,21 +8,19 @@
     <style>
         body { font-family: sans-serif; background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; height: 95vh; box-sizing: border-box; gap: 20px; }
         
-        /* SOL PANEL - Sabit Odalar */
+        /* Sol Panel - Sabit Odalar */
         .sol-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
         .sol-panel h3, .sag-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #404040; padding-bottom: 8px; font-size: 16px; }
         .oda-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-        .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
+        .oda-butonu { background-color: #2d2d2d; color: #e0e0e0; border: 1px solid #404040; padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; width: 100%; box-sizing: border-box; border: none; }
         .oda-butonu.aktif { background-color: #10b981; color: white; font-weight: bold; }
         
-        /* SAĞ PANEL - Giriş Yapan Kullanıcılar */
-        .sag-panel { width: 240px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
-        .user-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .user-item { padding: 8px 12px; background: #2d2d2d; border-radius: 6px; font-size: 14px; display: flex; flex-direction: column; gap: 5px; border: 1px solid #333; }
-        .user-ust { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        
-        /* Kurucuya Özel Yetki Seçim Kutusu */
-        .admin-islem-kutusu { background: #1a1a1a; color: #fff; border: 1px solid #444; font-size: 11px; padding: 2px; border-radius: 4px; outline: none; width: 100%; box-sizing: border-box; display: none; margin-top: 4px; }
+        /* Sağ Panel - Aktif Kullanıcılar */
+        .sag-panel { width: 220px; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; }
+        .user-listesi { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        .user-item { background-color: #2d2d2d; color: #e0e0e0; padding: 8px 12px; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #404040; }
+        .user-btn { background: #ef4444; border: none; color: white; font-size: 11px; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .user-btn.mod-btn { background: #10b981; margin-right: 4px; }
         
         /* Ana Panel - Sohbet Alanı */
         .ana-panel { flex-grow: 1; display: flex; flex-direction: column; }
@@ -35,12 +34,10 @@
         button.ana-btn { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap; }
         
         #chat-penceresi { flex-grow: 1; background-color: #242424; border: 1px solid #333; border-radius: 8px; padding: 15px; overflow-y: auto; margin-bottom: 15px; }
-        .mesaj { margin-bottom: 10px; font-size: 15px; padding: 4px 8px; border-radius: 4px; }
+        .mesaj { margin-bottom: 10px; font-size: 15px; }
         .mesaj strong { color: #34d399; margin-right: 5px; }
-        
-        /* Rol ve Etiketler */
-        .admin-mesaj { background-color: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; color: #fff; }
-        .mod-mesaj { background-color: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; color: #fff; }
+        .admin-mesaj { background-color: rgba(239, 68, 68, 0.1); padding: 6px 12px; border-radius: 6px; border-left: 3px solid #ef4444; color: #fff; }
+        .mod-mesaj { background-color: rgba(16, 185, 129, 0.1); padding: 6px 12px; border-radius: 6px; border-left: 3px solid #10b981; color: #fff; }
         .admin-etiket { background-color: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; }
         .mod-etiket { background-color: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; }
         .admin-isim { color: #fca5a5 !important; }
@@ -81,9 +78,9 @@
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Canlı Üyeler -->
+    <!-- SAĞ PANEL: Giriş Yapan Üyeler -->
     <div class="sag-panel">
-        <h3>👥 Kimler Var (<span id="uye-sayisi">3</span>)</h3>
+        <h3>👥 Kimler Var</h3>
         <div id="user-listesi-alani" class="user-listesi"></div>
     </div>
 
@@ -93,18 +90,16 @@
         let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Destek']; 
         const ADMIN_RUMUZU = "Kral"; 
 
-        // Giriş yapanların simulasyon listesi ve rolleri
-        let kullanicilar = [
-            { nick: "Kral", yetki: "Kurucu" },
+        // Listede görünecek hayali aktif kullanıcılar ve durumları
+        let aktifKullanicilar = [
             { nick: "Ahmet", yetki: "Kullanıcı" },
-            { nick: "Ayşe", yetki: "Kullanıcı" }
+            { nick: "Ayşe", yetki: "Kullanıcı" },
+            { nick: "Mehmet", yetki: "Kullanıcı" }
         ];
-        let banliKullanicilar = [];
 
-        // İlk kurulum tetiklemeleri (Orijinal kod yapınız bozulmadan bağlandı)
+        // Sayfa ilk açıldığında çalışan orijinal fonksiyonlarınız
         odaListesiniGuncelle();
         kullaniciListesiniGuncelle();
-        adminKontrolü();
         sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
 
         function odayaKatil(odaAdi) {
@@ -116,7 +111,7 @@
             odaListesiniGuncelle();
         }
 
-        // TIKIR TIKIR ÇALIŞAN ORİJİNAL MESAJ GÖNDERME MANTIĞINIZ
+        // BİREBİR İLK ORİJİNAL SAĞLAM MESAJ GÖNDERME FONKSİYONUNUZ
         function mesajGonder() {
             const input = document.getElementById('mesaj-input');
             const usernameInput = document.getElementById('username-input');
@@ -124,22 +119,17 @@
             
             if (!input || input.value.trim() === '') return;
 
-            if (banliKullanicilar.includes(username)) {
-                alert("Yasaklandınız! Mesaj gönderemezsiniz.");
-                return;
-            }
+            // Yazanın yetkisini listeden kontrol etme
+            let userBul = aktifKullanicilar.find(u => u.nick === username);
+            let yetkiDurumu = userBul ? userBul.yetki : "Kullanıcı";
+            if (username === ADMIN_RUMUZU) yetkiDurumu = "Kurucu";
 
-            // Listenizdeki güncel yetkinizi bulup ona göre mesaj rengi basar
-            let userBul = kullanicilar.find(u => u.nick === username);
-            let gecerliYetki = userBul ? userBul.yetki : "Kullanıcı";
-            if(username === ADMIN_RUMUZU) gecerliYetki = "Kurucu";
-
-            mesajEkle(username, input.value, gecerliYetki);
+            mesajEkle(username, input.value, yetkiDurumu);
             input.value = '';
             input.focus();
         }
 
-        // TIKIR TIKIR ÇALIŞAN ODA AÇMA MANTIĞINIZ
+        // BİREBİR İLK ORİJİNAL SAĞLAM ODA AÇMA FONKSİYONUNUZ
         function odaOlustur() {
             const usernameInput = document.getElementById('username-input').value.trim();
             if (usernameInput !== ADMIN_RUMUZU) {
@@ -171,19 +161,27 @@
             });
         }
 
-        // SAĞ PANELDE NİCKLERİN ANLIK LİSTELENMESİ VE KİLİTLENMEYEN YÖNETİM AKSİYONU
+        // SAĞ PANELDE KULLANICILARI VE YANLARINDA YETKİ/BAN BUTONLARINI BASAN ALAN
         function kullaniciListesiniGuncelle() {
             const listeAlani = document.getElementById('user-listesi-alani');
-            const uyeSayisiAlani = document.getElementById('uye-sayisi');
-            if (!listeAlani || !uyeSayisiAlani) return;
-            
+            if (!listeAlani) return;
             listeAlani.innerHTML = '';
-            uyeSayisiAlani.innerText = kullanicilar.length;
 
-            const gecerliMevcutNick = document.getElementById('username-input').value.trim();
+            const anlikNick = document.getElementById('username-input').value.trim();
 
-            kullanicilar.forEach(user => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'user-item';
+            aktifKullanicilar.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'user-item';
                 
-                let rozet = '';
+                let isimAlani = document.createElement('span');
+                isimAlani.innerText = user.nick;
+                if(user.yetki === "Moderatör") {
+                    isimAlani.innerHTML = `<span class="mod-etiket">Mod</span>${user.nick}`;
+                }
+                div.appendChild(isimAlani);
+
+                // Eğer "Kral" isek, kullanıcıların yanına direkt Mod Yap ve Banla butonları ekler
+                if(anlikNick === ADMIN_RUMUZU) {
+                    let butonlarDiv = document.createElement('div');
+
+                    // Mod Butonu
