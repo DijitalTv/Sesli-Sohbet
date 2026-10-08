@@ -40,7 +40,7 @@
         .etiket { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 6px; color: white; }
         .etiket-kurucu { background-color: #ef4444; }
         .etiket-mod { background-color: #10b981; }
-        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; }
+        .sistem-mesaji { color: #9ca3af; font-style: italic; background-color: rgba(16, 185, 129, 0.1); padding: 5px 10px; border-radius: 4px; display: inline-block; margin-bottom: 5px; width: 100%; box-sizing: border-box; }
         
         /* Alt Mesaj Gönderme Paneli */
         .mesaj-paneli { display: flex; gap: 10px; }
@@ -55,20 +55,19 @@
 </head>
 <body>
 
-    <!-- SOL PANEL: İstediğiniz Sabit Odalar -->
+    <!-- SOL PANEL: Odalar -->
     <div class="sol-panel">
         <h3>💬 Odalar</h3>
         <div id="oda-listesi-alanı" class="oda-listesi"></div>
     </div>
 
-    <!-- ANA PANEL: Sohbet Alanı ve Kontroller -->
+    <!-- ANA PANEL: Sohbet Alanı -->
     <div class="ana-panel">
         <div class="durum-bilgisi">
             Şu anki Oda: <span id="aktif-oda">Genel</span>
         </div>
 
         <div class="kontrol-paneli">
-            <!-- Giriş yapan kişi adını yazdığı an sağ panele canlı düşer -->
             <input type="text" id="username-input" value="Kral" oninput="kullaniciGuncelle()">
             <div id="admin-oda-alani">
                 <input type="text" id="oda-input" placeholder="Yeni oda adı yazın...">
@@ -84,13 +83,13 @@
         </div>
     </div>
 
-    <!-- SAĞ PANEL: Giriş Yapan Kullanıcılar -->
+    <!-- SAĞ PANEL: Kullanıcılar -->
     <div class="sag-panel">
-        <h3>👥 Kimler Var (<span id="aktif-sayi">1</span>)</h3>
+        <h3>👥 Kimler Var (<span id="aktif-sayi">0</span>)</h3>
         <div id="user-listesi-alani" class="user-listesi"></div>
     </div>
 
-    <!-- Kurucu Pop-up Yönetim Menüsü -->
+    <!-- Pop-up Yönetim Menüsü -->
     <div id="yonetim-menusu">
         <button onclick="yetkiVer('Moderatör')">🟢 Moderatör Yap</button>
         <button onclick="yetkiVer('Kullanıcı')">⚪ Yetkiyi Geri Al</button>
@@ -99,59 +98,64 @@
 
     <script>
         let mevcutOda = 'Genel';
-        // İstediğiniz gibi Genel, #Sohbet, #Oyun ve sabit #Destek odaları eklendi
         let acikOdalar = ['Genel', '#Sohbet', '#Oyun', '#Destek']; 
         const ADMIN_RUMUZU = "Kral"; 
         
-        // Sağ panel simülasyonu için chate ilk girişte bulunan kullanıcılar
+        // İlk açılıştaki başlangıç listesi
         let kullanicilar = [
-            { nick: "Kral", yetki: "Kurucu" },
-            { nick: "Ahmet", yetki: "Kullanıcı" },
-            { nick: "Ayşe", yetki: "Kullanıcı" }
+            { id: "1", nick: "Kral", yetki: "Kurucu" },
+            { id: "2", nick: "Ahmet", yetki: "Kullanıcı" },
+            { id: "3", nick: "Ayşe", yetki: "Kullanıcı" }
         ];
         
         let secilenKullaniciNick = "";
         let banliKullanicilar = [];
-        let eskiNick = "Kral"; 
 
-        // Başlangıç tetiklemeleri
-        odaListesiniGuncelle();
-        kullaniciListesiniGuncelle();
-        sistemMesajiEkle(`"${mevcutOda}" odasına giriş yapıldı. Mesaj alanı aktif.`);
+        // Sayfa yüklenir yüklenmez ilk arayüz kurulumunu yapıyoruz
+        window.onload = function() {
+            odaListesiniGuncelle();
+            kullaniciListesiniGuncelle();
+            adminArayuzAyarla("Kral");
+            sistemMesajiEkle(`"Genel" odasına giriş yapıldı. Mesaj alanı aktif.`);
+        };
 
-        // GİRİŞ YAPAN KULLANICI ADINI DEĞİŞTİRİNCE SAĞ PANELİ ANLIK GÜNCELLEYEN FONKSİYON
+        // GİRİŞ YAPAN KİŞİ NICK DEĞİŞTİRİNCE ÇALIŞAN CANLI FONKSİYON
         function kullaniciGuncelle() {
             const input = document.getElementById('username-input');
             let yeniNick = input ? input.value.trim() : 'Misafir';
             if(yeniNick === "") yeniNick = "Misafir";
 
-            let ben = kullanicilar.find(u => u.nick === eskiNick);
+            // Listede kendi id'si "1" olan elemanı bulup güncelliyoruz (kilitlenme önlendi)
+            let ben = kullanicilar.find(u => u.id === "1");
             if (ben) {
                 ben.nick = yeniNick;
                 ben.yetki = (yeniNick === ADMIN_RUMUZU) ? "Kurucu" : "Kullanıcı";
-            } else {
-                // Eğer listede yoksa yeni ekle
-                kullanicilar.push({ nick: yeniNick, yetki: (yeniNick === ADMIN_RUMUZU) ? "Kurucu" : "Kullanıcı" });
             }
 
-            const adminOdaAlani = document.getElementById('admin-oda-alani');
-            if (yeniNick === ADMIN_RUMUZU) {
-                input.style.color = "#ef4444";
-                if(adminOdaAlani) adminOdaAlani.style.display = "flex";
-            } else {
-                input.style.color = "#34d399";
-                if(adminOdaAlani) adminOdaAlani.style.display = "none";
-            }
-
-            eskiNick = yeniNick; 
+            adminArayuzAyarla(yeniNick);
             kullaniciListesiniGuncelle(); 
         }
 
-        // SAĞ PANELDE KULLANICILARI GÖSTEREN FONKSİYON
+        // Admin renk ve oda paneli ayarı
+        function adminArayuzAyarla(nick) {
+            const input = document.getElementById('username-input');
+            const adminOdaAlani = document.getElementById('admin-oda-alani');
+            if(!input || !adminOdaAlani) return;
+
+            if (nick === ADMIN_RUMUZU) {
+                input.style.color = "#ef4444";
+                adminOdaAlani.style.display = "flex";
+            } else {
+                input.style.color = "#34d399";
+                adminOdaAlani.style.display = "none";
+            }
+        }
+
+        // SAĞ PANELİ EKSİKSİZ LİSTELEYEN FONKSİYON
         function kullaniciListesiniGuncelle() {
             const listeAlani = document.getElementById('user-listesi-alani');
             const aktifSayiAlani = document.getElementById('aktif-sayi');
-            if (!listeAlani) return;
+            if (!listeAlani || !aktifSayiAlani) return;
             
             listeAlani.innerHTML = '';
             aktifSayiAlani.innerText = kullanicilar.length;
@@ -166,10 +170,10 @@
                 
                 div.innerHTML = `<span>${user.nick}</span> ${rozet}`;
                 
-                // Sağdaki kullanıcıya tıklama olayı
+                // Kurucu başkasına tıklarsa yönetim menüsü açılır
                 div.onclick = function(e) {
                     const gecerliNick = document.getElementById('username-input').value.trim();
-                    if (gecerliNick === ADMIN_RUMUZU && user.nick !== ADMIN_RUMUZU) {
+                    if (gecerliNick === ADMIN_RUMUZU && user.id !== "1") {
                         e.stopPropagation();
                         secilenKullaniciNick = user.nick;
                         menuyuGoster(e.clientX, e.clientY);
@@ -180,5 +184,5 @@
             });
         }
 
-        function odayaKatil(odaAdi) {
-            mevcutOda = odaAdi;
+        // SOL PANELDEKİ ODALARI BASAN FONKSİYON
+        function odaListesiniGuncelle() {
